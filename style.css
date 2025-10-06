@@ -1,0 +1,213 @@
+@font-face {
+  font-family: TurretRoad-Regular;
+  src: url(./resources/fonts/TurretRoad-Regular.ttf); 
+}
+
+@font-face {
+  font-family: TurretRoad-ExtraBold;
+  src: url(./resources/fonts/TurretRoad-ExtraBold.ttf); 
+}
+
+:root {
+    --primary-color: rgb(255, 255, 255);
+    --secondary-color: rgb(0, 0, 0);
+    --highlight-color: rgb(255, 0, 0);
+
+    --text-font: 'TurretRoad-Regular';
+    --title-font: 'TurretRoad-ExtraBold';
+
+    --h1-font-size: 2.5rem;
+    --h2-font-size: 1.5rem;
+    --p-font-size: 1.25rem;
+
+    --section-gap: 15vh;
+    --section-content-gap: 7vh;
+
+    --header-padding: 2rem 3rem;
+    --button-padding: 1rem 2vw;
+    --button-margin: 0rem 1vw;
+    --content-padding: 3rem;
+    --author-padding: 2rem;
+
+    --round-edges: 80px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    color: var(--secondary-color);
+    background-color: var(--secondary-color);
+    font-family: var(--text-font);
+    padding: 0; margin:0;
+    border-style: none;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    overflow: hidden;
+    border-style: none none dashed none;
+    border-color: var(--primary-color);
+    background-color: var(--secondary-color);
+}
+
+.buttons {
+    padding: var(--header-padding);
+}
+
+button {
+    padding: var(--button-padding);
+    margin: var(--button-margin);
+    background-color: transparent;
+    color: var(--primary-color);
+    font-family: var(--title-font);
+    font-size: var(--p-font-size);
+    border-style: none;
+    border-radius: var(--round-edges);
+    transition: 0.25s;
+}
+button:hover {
+    cursor: pointer;
+    background-color: var(--highlight-color);
+}
+
+.buttons svg {
+    height: 2.5rem;
+    width: auto;
+    fill: var(--primary-color);
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 2rem;
+    transition: fill 0.3s ease;
+}
+
+.buttons svg:hover {
+    cursor: pointer;
+    fill: var(--highlight-color);
+}
+
+.logo {
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    margin-left: 10vw;
+}
+
+
+.logo img {
+    height:fit-content;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+main {
+    font-family: var(--text-font);
+    color: var(--primary-color);
+    background-color: var(--secondary-color);
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: var(--h1-font-size);
+    text-align: center;
+    color: var(--highlight-color);
+}
+
+h2 {
+    font-family: var(--title-font);
+    font-size: var(--h2-font-size);
+    text-align: center;
+}
+
+p {
+    font-size: var(--p-font-size);
+}
+
+i {
+    color: grey;
+    font-size: 1rem;
+}
+
+.info-section {
+    margin: auto;
+    scroll-margin-top: 9rem;
+    margin-top: var(--section-gap);
+}
+
+.generic-section {
+    max-width: 60%;
+}
+
+.game-screen {
+    width: 100%;
+    height: auto;
+    border-style: double;
+    border-color: var(--primary-color);
+}
+
+.credits-section {
+    max-width: 80%; 
+}
+
+.content, .authors-content {
+    margin-top: var(--section-content-gap);
+    padding: var(--content-padding);
+}
+
+.bordered {
+    border-style: double;
+    border-radius: var(--round-edges);
+    border-color: var(--highlight-color);
+}
+
+.authors-content {
+    padding-top: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: stretch;
+}
+
+.author {
+    width: 25%;
+    padding: var(--author-padding);
+    justify-content: space-between;
+    display: flex;
+    flex-direction: column;
+}
+
+.author p{
+    text-align: center;
+}
+
+footer {
+    margin-top: var(--section-gap);
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+footer p {
+    font-size: 1rem;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+}
+a:hover {
+    text-decoration: underline;
+}
