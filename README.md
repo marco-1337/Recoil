@@ -1,6 +1,6 @@
 # Recoil
 
-Juego 2D de plataformas basado en físicas, hecho en Phaser.js
+Juego 2D de plataformas basado en físicas, hecho en Phaser
 
 - [GDD](./GDD%20-%20Recoil.pdf)
 
