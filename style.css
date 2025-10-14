@@ -23,6 +23,8 @@
     --section-gap: 15vh;
     --section-content-gap: 7vh;
 
+    --logo-height: 7rem;
+
     --header-padding: 2rem 3rem;
     --button-padding: 1rem 2vw;
     --button-margin: 0rem 1vw;
@@ -101,7 +103,7 @@ button:hover {
 
 
 .logo img {
-    height:fit-content;
+    height: var(--logo-height);
     width: auto;
     display: block;
     object-fit: contain;
@@ -156,7 +158,7 @@ i {
 }
 
 .credits-section {
-    max-width: 80%; 
+    max-width: 90%; 
 }
 
 .content, .authors-content {
@@ -168,6 +170,12 @@ i {
     border-style: double;
     border-radius: var(--round-edges);
     border-color: var(--highlight-color);
+}
+
+#controles img {
+    width: 100%;
+    height: auto;
+    align-self: center;
 }
 
 .authors-content {
