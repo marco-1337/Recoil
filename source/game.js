@@ -1,12 +1,17 @@
-import TestScene from './scenes/testScene.js';
+import LoadScene from './scenes/loadScene.js';
+import LevelScene from './scenes/levelScene.js';
 
 let config = {
 	type: Phaser.CANVAS,
 	parent: "game",
 	width: 800,
 	height: 450,
+	scale: {
+		mode: Phaser.Scale.FIT,
+		autoCenter: Phaser.Scale.CENTER_BOTH
+	},
 	pixelArt: true,
-	scene: [TestScene],
+	scene: [LoadScene, LevelScene],
 	
 	physics: {  
 		default: 'arcade',
