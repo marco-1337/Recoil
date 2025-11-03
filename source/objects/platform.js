@@ -9,12 +9,14 @@ export default class Platform extends Phaser.GameObjects.Sprite {
    * @param {number} w Anchura
    * @param {number} h altura
    */
-    constructor(scene, x, y, w, h) {
+    constructor(scene, player, x, y, w, h) {
         super(scene, x, y, 'platform');
         this.scene.add.existing(this);
-        this.scene.physics.add.existing(this, true);
+        // Si se reescala debe de ir antes de añadir la caja de colisión porque
+        // si no no se actualiza las dimensiones para la caja
         this.scaleX = w;
         this.scaleY = h;
-        //this.scene.physics.add.collider(this, player);
+        this.scene.physics.add.existing(this, true);
+        this.scene.physics.add.collider(this, player);
     }
 }

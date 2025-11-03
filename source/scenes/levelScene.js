@@ -1,4 +1,5 @@
 import Platform from '../objects/platform.js';
+import Player from '../objects/player.js';
 
 export default class LevelScene extends Phaser.Scene {
     
@@ -9,7 +10,9 @@ export default class LevelScene extends Phaser.Scene {
     preload() {}
 
     create() {
-        new Platform(this, this.cameras.main.centerX, this.cameras.main.centerY + 190, 24.8, 2);
+
+        let player = new Player(this, this.cameras.main.centerX, this.cameras.main.centerY, 0.8, 0.9);
+        new Platform(this, player, this.cameras.main.centerX, this.cameras.main.centerY + 455, 60, 5);
     }
 
     update() {

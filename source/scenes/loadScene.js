@@ -7,6 +7,7 @@ export default class TestScene extends Phaser.Scene {
     preload() {
         this.load.setPath('source/assets/sprites/');
         this.load.image('platform', 'test_sprite.png');
+        this.load.image('player', 'test_player.png');
     }
 
     create() {

@@ -2,10 +2,11 @@ import LoadScene from './scenes/loadScene.js';
 import LevelScene from './scenes/levelScene.js';
 
 let config = {
-	type: Phaser.CANVAS,
+	type: Phaser.AUTO,
 	parent: "game",
-	width: 800,
-	height: 450,
+	width: 1920,
+	height: 1080,
+	//backgroundColor: 0x3498db,
 	scale: {
 		mode: Phaser.Scale.FIT,
 		autoCenter: Phaser.Scale.CENTER_BOTH
@@ -19,8 +20,8 @@ let config = {
   			disableWebAudio: false
 		}, 
 		arcade: {
-			gravity: { y: 500 },
-			debug: false
+			gravity: { y: 4000 },
+			debug: true // permite ver las cajas de colisión
 		}
 	}
 };
