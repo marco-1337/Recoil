@@ -21,6 +21,7 @@
     --p-font-size: 1.25rem;
 
     --section-gap: 15vh;
+    --bottom-gap: 4vh;
     --section-content-gap: 7vh;
 
     --logo-height: 7rem;
@@ -150,11 +151,18 @@ i {
     max-width: 60%;
 }
 
-#game {
+.game-display-section {
     width: 100%;
     height: auto;
-    border-style: double;
+    border-style: solid;
     border-color: var(--primary-color);
+    padding: 0rem;
+}
+
+canvas {
+  display: block;
+  width: 100%;    
+  height: auto;
 }
 
 .credits-section {
@@ -201,7 +209,7 @@ i {
 
 footer {
     margin-top: var(--section-gap);
-    margin-bottom: 1rem;
+    padding-bottom: var(--bottom-gap);;
     color: var(--primary-color);
     text-align: center;
 }
