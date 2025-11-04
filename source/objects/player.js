@@ -3,6 +3,7 @@ const HORIZONTAL_GROUND_DECELERATION = 8500;
 const GROUND_HORIZONTAL_MAX_VELOCITY = 650;
 const JUMP_HORIZONTAL_BOOST = 100;
 const JUMP_HORIZONTAL_MAX_VELOCITY = 750;
+const UNBOOSTED_MAX_SPEED = 1200;
 const JUMP_VALUE = -1200;
 
 /**
@@ -36,6 +37,38 @@ export default class Player extends Phaser.GameObjects.Sprite {
         super(scene, x, y, 'player');
         this.scene.add.existing(this); 
 
+    // ANIMACIONES
+
+        this.lookingAt = 1;
+        this.grounded = false;
+
+        this.scene.anims.create({
+			key: 'idle',
+			frames: scene.anims.generateFrameNumbers('player', {start:0, end:0}),
+			frameRate: 5,
+			repeat: -1
+		});
+		this.scene.anims.create({
+			key: 'jump',
+			frames: scene.anims.generateFrameNumbers('player', {start:1, end:1}),
+			frameRate: 18,
+			repeat: 0
+		});
+		this.scene.anims.create({
+			key: 'run',
+			frames: scene.anims.generateFrameNumbers('player', {start:2, end:6}),
+			frameRate: 24,
+			repeat: -1
+		});
+        this.scene.anims.create({
+			key: 'runBackwards',
+			frames: scene.anims.generateFrameNumbers('player', {start:6, end:2}),
+			frameRate: 24,
+			repeat: -1
+		});
+
+        this.play('idle');
+
     // FÍSICAS
 
         if (!physicsWidthPercent || physicsWidthPercent > 1 || physicsWidthPercent < 0) {
@@ -58,6 +91,8 @@ export default class Player extends Phaser.GameObjects.Sprite {
 
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
 
+        this.body.setMaxSpeed(UNBOOSTED_MAX_SPEED);
+
     // INPUT HORIZONTAL
 
         this.left = this.scene.input.keyboard.addKey('A');
@@ -66,25 +101,56 @@ export default class Player extends Phaser.GameObjects.Sprite {
         this.horizontalInput = 0;
 
         this.left.on('down', () => {
-            this.horizontalInput -= 1;
+            this.addDirection(-1);
         });
 
         this.left.on('up', () => {
-            this.horizontalInput += 1;
+            this.addDirection(1);
         });
 
         this.right.on('down', () => {
-            this.horizontalInput += 1;
+            this.addDirection(1);
         });
 
         this.right.on('up', () => {
-            this.horizontalInput -= 1;
+            this.addDirection(-1);
         });
 
     // INPUT SALTO
 
         this.jump = this.scene.input.keyboard.addKey('SPACE');
         this.jumpExecuted = false;
+    }
+    /**
+    * @param {number} dir Direccion (1 o -1)
+    **/
+    addDirection(n) {
+        this.horizontalInput += n;
+
+        this.checkDirectionAnim();
+    }
+
+    checkDirectionAnim() {
+        if (this.body.blocked.down) {
+            let anim;
+
+            if (this.horizontalInput !== 0) {
+                anim = (this.lookingAt === this.horizontalInput) ? 'run' : 'runBackwards';
+            }
+            else {
+                anim = 'idle';
+            }
+            this.play(anim);
+            console.log(anim);
+        }
+    }
+
+    ground() {
+        if (!this.grounded) {
+            this.grounded = true;
+            this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
+            this.checkDirectionAnim();
+        }
     }
 
     preUpdate(t,dt) {
@@ -108,7 +174,11 @@ export default class Player extends Phaser.GameObjects.Sprite {
 
         // Manejo del salto
         if (this.jump.isDown && !this.jumpExecuted && this.body.blocked.down) {
+
+            this.play('jump');
+
             this.jumpExecuted = true; 
+            this.grounded = false;
             this.body.setVelocityY(JUMP_VALUE);
             this.horizontalMaxVelocity = JUMP_HORIZONTAL_MAX_VELOCITY;
 
@@ -118,10 +188,17 @@ export default class Player extends Phaser.GameObjects.Sprite {
         }
         else if (this.body.blocked.down) {
 
-            this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
+            this.ground();
 
             if (!this.jump.isDown) {
                 this.jumpExecuted = false; 
+            }
+        }
+
+        //Animaciones
+        if (this.body.blocked.down) {
+            if (this.horizontalInput !== 1 && this.anims.currentAnim.key !== '') {
+
             }
         }
     }

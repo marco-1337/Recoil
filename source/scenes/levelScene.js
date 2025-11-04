@@ -11,7 +11,7 @@ export default class LevelScene extends Phaser.Scene {
 
     create() {
 
-        let player = new Player(this, this.cameras.main.centerX, this.cameras.main.centerY, 0.8, 0.9);
+        let player = new Player(this, this.cameras.main.centerX, this.cameras.main.centerY, 0.3, 0.7);
         new Platform(this, player, this.cameras.main.centerX, this.cameras.main.centerY + 455, 60, 5);
     }
 

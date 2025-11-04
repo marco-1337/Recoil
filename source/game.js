@@ -12,6 +12,7 @@ let config = {
 		autoCenter: Phaser.Scale.CENTER_BOTH
 	},
 	pixelArt: true,
+	antialias: true,
 	scene: [LoadScene, LevelScene],
 	
 	physics: {  
