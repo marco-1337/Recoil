@@ -120,7 +120,14 @@ export default class Player extends Phaser.GameObjects.Sprite {
 
         this.jump = this.scene.input.keyboard.addKey('SPACE');
         this.jumpExecuted = false;
+
+    // INPUT RATON
+
+        this.pointer = this.scene.input.activePointer;
     }
+
+
+
     /**
     * @param {number} dir Direccion (1 o -1)
     **/
@@ -195,11 +202,19 @@ export default class Player extends Phaser.GameObjects.Sprite {
             }
         }
 
-        //Animaciones
-        if (this.body.blocked.down) {
-            if (this.horizontalInput !== 1 && this.anims.currentAnim.key !== '') {
+        // Direccion
 
-            }
+        if (this.pointer.worldX < this.x) {
+            this.lookingAt = -1;
+            this.setFlipX(true);
         }
+        else 
+        {
+            this.lookingAt = 1;
+            this.setFlipX(false);
+        }
+
+
+
     }
 }
