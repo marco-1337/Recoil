@@ -1,11 +1,11 @@
 @font-face {
   font-family: TurretRoad-Regular;
-  src: url(./web_resources/fonts/TurretRoad-Regular.ttf); 
+  src: url(./assets/web_resources/fonts/TurretRoad-Regular.ttf); 
 }
 
 @font-face {
   font-family: TurretRoad-ExtraBold;
-  src: url(./web_resources/fonts/TurretRoad-ExtraBold.ttf); 
+  src: url(./assets/web_resources/fonts/TurretRoad-ExtraBold.ttf); 
 }
 
 :root {
