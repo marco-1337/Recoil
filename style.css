@@ -151,6 +151,10 @@ i {
     max-width: 60%;
 }
 
+.game-section {
+    max-width: 65%;
+}
+
 .game-display-section {
     width: 100%;
     height: auto;

@@ -47,15 +47,14 @@ export default class Player extends Phaser.GameObjects.Container  {
 
     // FONDO DEL ARMA
         // Hay que añadirlo el primero porque si no phaser llora
-        this.weaponBg = scene.add.sprite(0, 0, 'weapon');
+        this.weaponBg = scene.add.sprite(1, 5, 'weapon');
         this.add(this.weaponBg);
         this.weaponBg.play('background_weapon');
 
     // CUERPO DEL JUADOR
 
-        this.sprite = scene.add.sprite(0, 0, 'player');
-        this.sprite.setDepth(10);
-        this.add(this.sprite);
+        this.playerBody = scene.add.sprite(0, 0, 'player');
+        this.add(this.playerBody);
 
     // ANIMACIONES
 
@@ -87,7 +86,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 			repeat: -1
 		});
 
-        this.sprite.play('idle');
+        this.playerBody.play('idle');
 
     // FÍSICAS
 
@@ -106,11 +105,9 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.body; //Para que VSCode lintee
 
         //Esto cambia la caja de colisiones, no el sprite
-        this.body.setSize(this.sprite.displayWidth * physicsWidthPercent, this.sprite.displayHeight * physicsHeightPercent);
+        this.body.setSize(this.playerBody.displayWidth * physicsWidthPercent, this.playerBody.displayHeight * physicsHeightPercent);
 
-        console.log(this.sprite.height, this.sprite.x - this.body.position.x, this.sprite.y - this.body.position.y);
-
-        this.body.setOffset(-this.body.width/2, -this.body.height/2 + (this.sprite.displayHeight * (1-physicsHeightPercent))/2);
+        this.body.setOffset(-this.body.width/2, -this.body.height/2 + (this.playerBody.displayHeight * (1-physicsHeightPercent))/2);
 
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
 
@@ -157,7 +154,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 			repeat: -1
 		});
 
-        this.weapon = scene.add.sprite(0, 0, 'weapon');
+        this.weapon = scene.add.sprite(1, 5, 'weapon');
         this.add(this.weapon);
         this.weapon.play('front_weapon');
     }
@@ -183,7 +180,7 @@ export default class Player extends Phaser.GameObjects.Container  {
             else {
                 anim = 'idle';
             }
-            this.sprite.play(anim);
+            this.playerBody.play(anim);
         }
     }
 
@@ -216,7 +213,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         // Manejo del salto
         if (this.jump.isDown && !this.jumpExecuted && this.body.blocked.down) {
 
-            this.sprite.play('jump');
+            this.playerBody.play('jump');
 
             this.jumpExecuted = true; 
             this.grounded = false;
@@ -236,16 +233,28 @@ export default class Player extends Phaser.GameObjects.Container  {
             }
         }
 
-        // Direccion
+        // Flips segun donde esté el ratón
 
         if (this.pointer.worldX < this.x) {
             this.lookingAt = -1;
-            this.sprite.setFlipX(true);
+            this.playerBody.setFlipX(true);
+            this.weapon.setFlipY(true);
+            this.weaponBg.setFlipY(true);
         }
         else 
         {
             this.lookingAt = 1;
-            this.sprite.setFlipX(false);
+            this.playerBody.setFlipX(false);
+            this.weapon.setFlipY(false);
+            this.weaponBg.setFlipY(false);
         }
+
+        // Rotación del arma apuntando al ratón
+
+        const angle = Phaser.Math.Angle.Between(this.x, this.y, 
+            this.pointer.worldX, this.pointer.worldY);
+
+        this.weapon.setRotation(angle);
+        this.weaponBg.setRotation(angle);
     }
 }
