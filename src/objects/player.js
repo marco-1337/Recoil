@@ -5,23 +5,8 @@ const JUMP_HORIZONTAL_BOOST = 100;
 const JUMP_HORIZONTAL_MAX_VELOCITY = 750;
 const UNBOOSTED_MAX_SPEED = 1200;
 const JUMP_VALUE = -1200;
-
-/**
- * Mueve current hacia target a una velocidad máxima delta
- * @param {number} current - valor actual
- * @param {number} target - valor objetivo
- * @param {number} maxDelta - máximo cambio permitido
- * @returns {number} nuevo valor
- */
-function moveTowards(current, target, maxDelta) {
-    const delta = target - current;
-
-    if (Math.abs(delta) <= maxDelta) {
-        return target;
-    }
-
-    return current + Math.sign(delta) * maxDelta;
-}
+const SHOOT_VALUE = 1600;
+const BOOSTED_MAX_SPEED = UNBOOSTED_MAX_SPEED * 4;
 
 export default class Player extends Phaser.GameObjects.Container  {
 
@@ -37,67 +22,40 @@ export default class Player extends Phaser.GameObjects.Container  {
         super(scene, x, y);
         this.scene.add.existing(this); 
 
-		this.scene.anims.create({
-			key: 'background_weapon',
-			frames: scene.anims.generateFrameNumbers('weapon', {start:1, end:1}),
-			frameRate: 1000,
-			repeat: -1
-		});
+        // PARÁMETROS
+        this.horizontalInput = 0;
+        this.lookingAt = 1;
+        this.grounded = false;
+        this.jumpExecuted = false;
+        this.canShoot = true;
+        this.timeToShoot = 1.;
 
+        // SPRITE DE FONDO DEL ARMA
 
-    // FONDO DEL ARMA
-        // Hay que añadirlo el primero porque si no phaser llora
         this.weaponBg = scene.add.sprite(1, 5, 'weapon');
         this.add(this.weaponBg);
         this.weaponBg.play('background_weapon');
 
-    // CUERPO DEL JUADOR
+        // SPRITE DEL CUERPO
 
         this.playerBody = scene.add.sprite(0, 0, 'player');
         this.add(this.playerBody);
-
-    // ANIMACIONES
-
-        this.lookingAt = 1;
-        this.grounded = false;
-
-        this.scene.anims.create({
-			key: 'idle',
-			frames: scene.anims.generateFrameNumbers('player', {start:0, end:0}),
-			frameRate: 5,
-			repeat: -1
-		});
-		this.scene.anims.create({
-			key: 'jump',
-			frames: scene.anims.generateFrameNumbers('player', {start:1, end:1}),
-			frameRate: 18,
-			repeat: 0
-		});
-		this.scene.anims.create({
-			key: 'run',
-			frames: scene.anims.generateFrameNumbers('player', {start:2, end:6}),
-			frameRate: 24,
-			repeat: -1
-		});
-        this.scene.anims.create({
-			key: 'runBackwards',
-			frames: scene.anims.generateFrameNumbers('player', {start:6, end:2}),
-			frameRate: 24,
-			repeat: -1
-		});
-
         this.playerBody.play('idle');
 
-    // FÍSICAS
+        // SPRITE DEL ARMA
+
+        this.weapon = scene.add.sprite(1, 5, 'weapon');
+        this.add(this.weapon);
+        this.weapon.play('front_weapon');
+
+        // FÍSICAS Y MOVIMIENTO
 
         if (!physicsWidthPercent || physicsWidthPercent > 1 || physicsWidthPercent < 0) {
             physicsWidthPercent = 1;
         }
-
         if (!physicsHeightPercent || physicsHeightPercent > 1 || physicsHeightPercent < 0) {
             physicsHeightPercent = 1;
         }
-
 
         this.scene.physics.add.existing(this);
 
@@ -105,91 +63,62 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.body; //Para que VSCode lintee
 
         //Esto cambia la caja de colisiones, no el sprite
-        this.body.setSize(this.playerBody.displayWidth * physicsWidthPercent, this.playerBody.displayHeight * physicsHeightPercent);
+        this.body.setSize(this.playerBody.displayWidth * physicsWidthPercent, 
+            this.playerBody.displayHeight * physicsHeightPercent);
 
-        this.body.setOffset(-this.body.width/2, -this.body.height/2 + (this.playerBody.displayHeight * (1-physicsHeightPercent))/2);
+        this.body.setOffset(-this.body.width/2, -this.body.height/2 + 
+            (this.playerBody.displayHeight * (1-physicsHeightPercent))/2);
 
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
 
         this.body.setMaxSpeed(UNBOOSTED_MAX_SPEED);
 
-    // INPUT HORIZONTAL
+        // INPUT HORIZONTAL
 
         this.left = this.scene.input.keyboard.addKey('A');
         this.right = this.scene.input.keyboard.addKey('D');
 
-        this.horizontalInput = 0;
+        this.leftPress = false;
+        this.goingRight = false;
 
         this.left.on('down', () => {
-            this.addDirection(-1);
+            this.leftPress = true;
+            this.reloadHorizontalDirection();
+            this.reloadAnimation();
         });
 
         this.left.on('up', () => {
-            this.addDirection(1);
+            this.leftPress = false;
+            this.reloadHorizontalDirection();
+            this.reloadAnimation();
         });
 
         this.right.on('down', () => {
-            this.addDirection(1);
+            this.rightPress = true;
+            this.reloadHorizontalDirection();
+            this.reloadAnimation();
         });
 
         this.right.on('up', () => {
-            this.addDirection(-1);
+            this.rightPress = false;
+            this.reloadHorizontalDirection();
+            this.reloadAnimation();
+            console.log('R -');
         });
 
-    // INPUT SALTO
-
+        // INPUT SALTO
         this.jump = this.scene.input.keyboard.addKey('SPACE');
-        this.jumpExecuted = false;
 
-    // INPUT RATON
-
+        // INPUT RATON
         this.pointer = this.scene.input.activePointer;
+        this.leftClickPressed = false;
 
-    // AÑADIR ARMA
+        this.scene.input.on('pointerdown', pointer => {
 
-        this.scene.anims.create({
-			key: 'front_weapon',
-			frames: scene.anims.generateFrameNumbers('weapon', {start:0, end:0}),
-			frameRate: 1000,
-			repeat: -1
-		});
-
-        this.weapon = scene.add.sprite(1, 5, 'weapon');
-        this.add(this.weapon);
-        this.weapon.play('front_weapon');
-    }
-
-
-
-    /**
-    * @param {number} dir Direccion (1 o -1)
-    **/
-    addDirection(n) {
-        this.horizontalInput += n;
-
-        this.checkDirectionAnim();
-    }
-
-    checkDirectionAnim() {
-        if (this.body.blocked.down) {
-            let anim;
-
-            if (this.horizontalInput !== 0) {
-                anim = (this.lookingAt === this.horizontalInput) ? 'run' : 'runBackwards';
+            if (pointer.leftButtonDown()) {
+                this.leftClickPressed = true;
             }
-            else {
-                anim = 'idle';
-            }
-            this.playerBody.play(anim);
-        }
-    }
-
-    ground() {
-        if (!this.grounded) {
-            this.grounded = true;
-            this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
-            this.checkDirectionAnim();
-        }
+        });
     }
 
     preUpdate(t,dt) {
@@ -197,21 +126,44 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // Manejo movimiento horizontal
         if (this.horizontalInput != 0) {
-            if (Math.sign(this.body.velocity.x) != this.horizontalInput) {
-                this.body.velocity.x = 0;
-            }
 
-            this.body.setVelocityX(moveTowards(this.body.velocity.x, this.horizontalMaxVelocity * this.horizontalInput, HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+            if (this.body.onFloor() && this.grounded) {
+
+                if (Math.sign(this.body.velocity.x) != this.horizontalInput) {
+                    this.body.setVelocityX(0);
+                }
+
+                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
+                    this.horizontalMaxVelocity * this.horizontalInput, 
+                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+            }
+            else {
+
+                if (Math.sign(this.body.velocity.x) === this.horizontalInput &&
+                    Math.abs(this.body.velocity.x) < this.horizontalMaxVelocity) {
+
+                    this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
+                    this.horizontalMaxVelocity * this.horizontalInput, 
+                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                }
+                else if (Math.sign(this.body.velocity.x) !== this.horizontalInput) {
+                    this.body.setVelocityX(this.body.velocity.x + this.moveTowards(0, 
+                    this.horizontalMaxVelocity * this.horizontalInput, 
+                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                }
+            }
         }
         else {
-            if (this.body.velocity.x != 0) {
-                this.body.setVelocityX(moveTowards(this.body.velocity.x, 0, HORIZONTAL_GROUND_DECELERATION * deltaSeconds))
+            if (this.body.velocity.x != 0 && this.body.onFloor()) {
+                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 0, 
+                    HORIZONTAL_GROUND_DECELERATION * deltaSeconds))
             }
             this.body.setAcceleration(0);
         }
 
-        // Manejo del salto
-        if (this.jump.isDown && !this.jumpExecuted && this.body.blocked.down) {
+        // Manejo del salto y grounding
+
+        if (this.jump.isDown && !this.jumpExecuted && this.body.onFloor()) {
 
             this.playerBody.play('jump');
 
@@ -220,17 +172,43 @@ export default class Player extends Phaser.GameObjects.Container  {
             this.body.setVelocityY(JUMP_VALUE);
             this.horizontalMaxVelocity = JUMP_HORIZONTAL_MAX_VELOCITY;
 
+            // Este boost ocurre solo una vez, por lo tanto no se aplica delta
             if (this.body.velocity.x != 0) {
-                this.body.setVelocityX(moveTowards(this.body.velocity.x, this.horizontalMaxVelocity * this.horizontalInput, JUMP_HORIZONTAL_BOOST));
-            }
+                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
+                    this.horizontalMaxVelocity * this.horizontalInput, JUMP_HORIZONTAL_BOOST));
+            } 
         }
-        else if (this.body.blocked.down) {
+        else if (this.body.onFloor()) {
+            if (!this.grounded) {this.ground();}
+            if (this.jump.isUp && this.jumpExecuted) this.jumpExecuted = false; 
+        }
 
-            this.ground();
+        // ARMA
 
-            if (!this.jump.isDown) {
-                this.jumpExecuted = false; 
-            }
+        if (this.leftClickPressed) { 
+
+            const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0, 0)
+
+            const angle = Phaser.Math.Angle.Between(shootPoint.x, shootPoint.y, 
+                this.pointer.worldX, this.pointer.worldY);
+                
+            // Como minimo siempre impulsa el retroceso de la escopeta, pero
+            // si ya se lleva una velocidad fevorable al disparo, se suma.
+            //
+            // Las velocidad en contra del tiro no se opone
+            let impulse = new Phaser.Math.Vector2((this.body.velocity.x/2 - (Math.cos(angle) * SHOOT_VALUE)),
+                this.body.velocity.y/2 - (Math.sin(angle) * SHOOT_VALUE));
+            impulse.setLength(Math.max(SHOOT_VALUE, impulse.length()));
+
+            this.body.setVelocity(impulse.x, impulse.y);
+
+            this.body.setMaxSpeed(BOOSTED_MAX_SPEED );
+            this.grounded = false;
+            this.jumpExecuted = true;
+
+            this.playerBody.play('jump');
+
+            this.leftClickPressed = false;
         }
 
         // Flips segun donde esté el ratón
@@ -256,5 +234,55 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         this.weapon.setRotation(angle);
         this.weaponBg.setRotation(angle);
+    }
+
+    reloadHorizontalDirection() {
+        if (this.rightPress && !this.leftPress) {
+            this.horizontalInput = 1;
+        }
+        else if (!this.rightPress && this.leftPress){
+            this.horizontalInput = -1;
+        }
+        else {
+            this.horizontalInput = 0;
+        }
+    }
+
+    reloadAnimation() {
+        if (this.body.onFloor()) {
+            let anim;
+
+            if (this.horizontalInput !== 0) {
+                anim = (this.lookingAt === this.horizontalInput) ? 'run' : 'runBackwards';
+            }
+            else {
+                anim = 'idle';
+            }
+            this.playerBody.play(anim);
+        }
+    }
+
+    ground() {
+        this.grounded = true;
+        this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
+        this.body.setMaxSpeed(UNBOOSTED_MAX_SPEED);
+        this.reloadAnimation();
+    }
+
+    /**
+     * Mueve current hacia target a una velocidad máxima delta
+     * @param {number} current - valor actual
+     * @param {number} target - valor objetivo
+     * @param {number} maxDelta - máximo cambio permitido
+     * @returns {number} nuevo valor
+     */
+    moveTowards(current, target, maxDelta) {
+        const delta = target - current;
+
+        if (Math.abs(delta) <= maxDelta) {
+            return target;
+        }
+
+        return current + Math.sign(delta) * maxDelta;
     }
 }
