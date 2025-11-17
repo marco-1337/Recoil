@@ -52,7 +52,6 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 0;
-    position: sticky;
     top: 0;
     overflow: hidden;
     border-style: none none dashed none;
@@ -152,7 +151,7 @@ i {
 }
 
 .game-section {
-    max-width: 65%;
+    max-width: 75%;
 }
 
 .game-display-section {

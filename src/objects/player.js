@@ -3,10 +3,10 @@ const HORIZONTAL_GROUND_DECELERATION = 8500;
 const GROUND_HORIZONTAL_MAX_VELOCITY = 650;
 const JUMP_HORIZONTAL_BOOST = 100;
 const JUMP_HORIZONTAL_MAX_VELOCITY = 750;
-const UNBOOSTED_MAX_SPEED = 1200;
+const GROUND_MAX_SPEED = 1200;
 const JUMP_VALUE = -1200;
-const SHOOT_VALUE = 1600;
-const BOOSTED_MAX_SPEED = UNBOOSTED_MAX_SPEED * 4;
+const SHOOT_VALUE = 1700;
+const AIR_MAX_SPEED = 2100;
 
 export default class Player extends Phaser.GameObjects.Container  {
 
@@ -32,7 +32,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // SPRITE DE FONDO DEL ARMA
 
-        this.weaponBg = scene.add.sprite(1, 5, 'weapon');
+        this.weaponBg = scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weaponBg);
         this.weaponBg.play('background_weapon');
 
@@ -44,7 +44,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // SPRITE DEL ARMA
 
-        this.weapon = scene.add.sprite(1, 5, 'weapon');
+        this.weapon = scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weapon);
         this.weapon.play('front_weapon');
 
@@ -71,7 +71,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
 
-        this.body.setMaxSpeed(UNBOOSTED_MAX_SPEED);
+        this.body.setMaxSpeed(GROUND_MAX_SPEED);
 
         // INPUT HORIZONTAL
 
@@ -103,7 +103,6 @@ export default class Player extends Phaser.GameObjects.Container  {
             this.rightPress = false;
             this.reloadHorizontalDirection();
             this.reloadAnimation();
-            console.log('R -');
         });
 
         // INPUT SALTO
@@ -163,15 +162,24 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // Manejo del salto y grounding
 
+        if (!this.body.onFloor() && this.grounded) {
+            this.playerBody.play('jump');
+            this.jumpExecuted = true;
+            this.grounded = false;
+            this.body.setMaxSpeed(AIR_MAX_SPEED);
+        }
+
         if (this.jump.isDown && !this.jumpExecuted && this.body.onFloor()) {
 
             this.playerBody.play('jump');
 
             this.jumpExecuted = true; 
             this.grounded = false;
+
+            this.body.setMaxSpeed(AIR_MAX_SPEED);
             this.body.setVelocityY(JUMP_VALUE);
             this.horizontalMaxVelocity = JUMP_HORIZONTAL_MAX_VELOCITY;
-
+            
             // Este boost ocurre solo una vez, por lo tanto no se aplica delta
             if (this.body.velocity.x != 0) {
                 this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
@@ -185,9 +193,10 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // ARMA
 
-        if (this.leftClickPressed) { 
+        const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
+        this.pointer.updateWorldPoint(this.scene.cameras.main);
 
-            const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0, 0)
+        if (this.leftClickPressed) { 
 
             const angle = Phaser.Math.Angle.Between(shootPoint.x, shootPoint.y, 
                 this.pointer.worldX, this.pointer.worldY);
@@ -202,7 +211,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
             this.body.setVelocity(impulse.x, impulse.y);
 
-            this.body.setMaxSpeed(BOOSTED_MAX_SPEED );
+            this.body.setMaxSpeed(AIR_MAX_SPEED );
             this.grounded = false;
             this.jumpExecuted = true;
 
@@ -219,8 +228,7 @@ export default class Player extends Phaser.GameObjects.Container  {
             this.weapon.setFlipY(true);
             this.weaponBg.setFlipY(true);
         }
-        else 
-        {
+        else {
             this.lookingAt = 1;
             this.playerBody.setFlipX(false);
             this.weapon.setFlipY(false);
@@ -229,7 +237,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         // Rotación del arma apuntando al ratón
 
-        const angle = Phaser.Math.Angle.Between(this.x, this.y, 
+        const angle = Phaser.Math.Angle.Between(shootPoint.x, shootPoint.y, 
             this.pointer.worldX, this.pointer.worldY);
 
         this.weapon.setRotation(angle);
@@ -265,7 +273,7 @@ export default class Player extends Phaser.GameObjects.Container  {
     ground() {
         this.grounded = true;
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
-        this.body.setMaxSpeed(UNBOOSTED_MAX_SPEED);
+        this.body.setMaxSpeed(GROUND_MAX_SPEED);
         this.reloadAnimation();
     }
 

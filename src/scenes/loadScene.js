@@ -8,16 +8,25 @@ export default class TestScene extends Phaser.Scene {
     preload() {
 
         this.load.setPath('assets/sprites/');
+
         this.load.image('platform', 'test_sprite.png');
         this.load.spritesheet('player', 'player_spritesheet.png', 
-            { frameWidth: 96, frameHeight: 144 });
+            { frameWidth: 74, frameHeight: 115});
         this.load.spritesheet('weapon', 'gun_spritesheet.png', 
-            { frameWidth: 110, frameHeight: 28});
+            { frameWidth: 100, frameHeight: 30});
+		this.load.image('terrain_tileset', 'terrain_tileset.png');
+		this.load.image('flag', 'flag.png');
+
+		this.load.setPath('assets/levels/');
+
+		this.load.tilemapTiledJSON('level_1', 'Level1.json');
     }
 
     // Creación de animaciones, se crean después de la carga de los recursos porque pueden no estar
     // listos tras las llamadas al preload, al ser asíncrono
     create() {
+
+		this.physics.world.TILE_BIAS = 100;
 
         // ANIMACIONES DEL CUERPO DEL PLAYER
         this.anims.create({
