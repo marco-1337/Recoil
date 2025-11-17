@@ -10,6 +10,12 @@ const AIR_MAX_SPEED = 2100;
 
 export default class Player extends Phaser.GameObjects.Container  {
 
+
+    playerStates = {
+        GROUNDED: 0,
+        AIR: 1
+    }
+
     /**
    * Constructor de la Plataforma
    * @param {Phaser.Scene} scene Escena a la que pertenece la plataforma
@@ -24,10 +30,11 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         this.scene.add.existing(this); 
 
+        this.state = this.playerStates.AIR;
+
         // PARÁMETROS
         this.horizontalInput = 0;
         this.lookingAt = 1;
-        this.grounded = false;
         this.jumpExecuted = false;
         this.canShoot = true;
         this.timeToShoot = 1.;
@@ -138,81 +145,124 @@ export default class Player extends Phaser.GameObjects.Container  {
     preUpdate(t,dt) {
         const deltaSeconds = dt / 1000;
 
-        // Manejo movimiento horizontal
-        if (this.horizontalInput != 0) {
+        switch (this.state) {
 
-            if (this.body.onFloor() && this.grounded) {
-
-                if (Math.sign(this.body.velocity.x) != this.horizontalInput) {
-                    this.body.setVelocityX(0);
+            case this.playerStates.GROUNDED:
+                
+                if (!this.body.onFloor()) {
+                    this.changeState(this.playerStates.AIR);
                 }
 
-                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
-                    this.horizontalMaxVelocity * this.horizontalInput, 
-                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
-            }
-            else {
-
-                if (Math.sign(this.body.velocity.x) === this.horizontalInput &&
-                    Math.abs(this.body.velocity.x) < this.horizontalMaxVelocity) {
+                if (this.horizontalInput != 0) {
+                    if (Math.sign(this.body.velocity.x) != this.horizontalInput) {
+                        this.body.setVelocityX(0);
+                    }
 
                     this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
-                    this.horizontalMaxVelocity * this.horizontalInput, 
-                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                        this.horizontalMaxVelocity * this.horizontalInput, 
+                        HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                    }
+                else {
+                    if (this.body.velocity.x != 0) {
+                        this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 0, 
+                            HORIZONTAL_GROUND_DECELERATION * deltaSeconds));
+                    }
+
+                    this.body.setAcceleration(0);
                 }
-                else if (Math.sign(this.body.velocity.x) !== this.horizontalInput) {
-                    this.body.setVelocityX(this.body.velocity.x + this.moveTowards(0, 
-                    this.horizontalMaxVelocity * this.horizontalInput, 
-                    HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+
+                // Manejo salto
+                if (this.jump.isDown && !this.jumpExecuted) {
+
+                    this.changeState(this.playerStates.AIR);
+
+                    this.body.setVelocityY(JUMP_VALUE);
+                    
+                    // Este boost ocurre solo una vez, por lo tanto no se aplica delta
+                    if (this.body.velocity.x != 0) {
+                        this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
+                            this.horizontalMaxVelocity * this.horizontalInput, JUMP_HORIZONTAL_BOOST));
+                    } 
                 }
-            }
+                else if (this.jump.isUp && this.jumpExecuted) this.jumpExecuted = false; 
+
+                break;
+
+            case this.playerStates.AIR:
+
+                if (this.horizontalInput != 0) { 
+                    if (Math.sign(this.body.velocity.x) === this.horizontalInput &&
+                        Math.abs(this.body.velocity.x) < this.horizontalMaxVelocity) {
+
+                        this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
+                        this.horizontalMaxVelocity * this.horizontalInput, 
+                        HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                    }
+                    else if (Math.sign(this.body.velocity.x) !== this.horizontalInput) {
+                        this.body.setVelocityX(this.body.velocity.x + this.moveTowards(0, 
+                        this.horizontalMaxVelocity * this.horizontalInput, 
+                        HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
+                    }
+                }
+                else {
+                    this.body.setAcceleration(0);
+                }
+
+                if (this.body.onFloor()) {
+                    this.changeState(this.playerStates.GROUNDED);
+                }
+
+                break;
         }
-        else {
-            if (this.body.velocity.x != 0 && this.body.onFloor()) {
-                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 0, 
-                    HORIZONTAL_GROUND_DECELERATION * deltaSeconds))
-            }
-            this.body.setAcceleration(0);
-        }
-
-        // Manejo del salto y grounding
-
-        if (!this.body.onFloor() && this.grounded) {
-            this.playerBody.play('jump');
-            this.jumpExecuted = true;
-            this.grounded = false;
-            this.body.setMaxSpeed(AIR_MAX_SPEED);
-        }
-
-        if (this.jump.isDown && !this.jumpExecuted && this.body.onFloor()) {
-
-            this.playerBody.play('jump');
-
-            this.jumpExecuted = true; 
-            this.grounded = false;
-
-            this.body.setMaxSpeed(AIR_MAX_SPEED);
-            this.body.setVelocityY(JUMP_VALUE);
-            this.horizontalMaxVelocity = JUMP_HORIZONTAL_MAX_VELOCITY;
-            
-            // Este boost ocurre solo una vez, por lo tanto no se aplica delta
-            if (this.body.velocity.x != 0) {
-                this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
-                    this.horizontalMaxVelocity * this.horizontalInput, JUMP_HORIZONTAL_BOOST));
-            } 
-        }
-        else if (this.body.onFloor()) {
-            if (!this.grounded) {this.ground();}
-            if (this.jump.isUp && this.jumpExecuted) this.jumpExecuted = false; 
-        }
-
         // ARMA
 
         const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
         this.pointer.updateWorldPoint(this.scene.cameras.main);
 
+        this.handleShoot(shootPoint);
+        this.rotateWeapon(shootPoint);
+    }
+
+
+    /**
+     * Cambia al estado pasado
+     * @param {number} newState estado al que se cambia
+     */
+    changeState(newState) {
+        if (newState !== this.state && newState >= 0 && newState < Object.keys(this.playerStates).length) {
+            this.state = newState;
+            
+            switch (this.state) {
+                case this.playerStates.GROUNDED: 
+            
+                    this.body.setMaxSpeed(GROUND_MAX_SPEED);
+                    this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
+                    this.reloadAnimation();
+
+                    break;
+                case this.playerStates.AIR: 
+
+                    this.jumpExecuted = true; 
+                    this.body.setMaxSpeed(AIR_MAX_SPEED);
+                    this.horizontalMaxVelocity = JUMP_HORIZONTAL_MAX_VELOCITY;
+
+                    this.playerBody.play('jump');
+
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Manejado del disparo
+     * @param {Phaser.Types.Math.Vector2Like} shootPoint el punto desde donde se dispara
+     */
+    handleShoot(shootPoint) {
+
         if (this.leftClickPressed) { 
 
+            this.changeState(this.playerStates.AIR);
+            
             const angle = Phaser.Math.Angle.Between(shootPoint.x, shootPoint.y, 
                 this.pointer.worldX, this.pointer.worldY);
                 
@@ -226,17 +276,17 @@ export default class Player extends Phaser.GameObjects.Container  {
 
             this.body.setVelocity(impulse.x, impulse.y);
 
-            this.body.setMaxSpeed(AIR_MAX_SPEED );
-            this.grounded = false;
-            this.jumpExecuted = true;
-
-            this.playerBody.play('jump');
-
             this.leftClickPressed = false;
         }
+    }
 
+    /**
+     * Rota el arma según donde apunta el ratón
+     * @param {Phaser.Types.Math.Vector2Like} shootPoint el punto desde donde se dispara
+     */
+    rotateWeapon(shootPoint) {
+        
         // Flips segun donde esté el ratón
-
         if (this.pointer.worldX < this.x) {
             this.lookingAt = -1;
             this.playerBody.setFlipX(true);
@@ -283,13 +333,6 @@ export default class Player extends Phaser.GameObjects.Container  {
             }
             this.playerBody.play(anim);
         }
-    }
-
-    ground() {
-        this.grounded = true;
-        this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
-        this.body.setMaxSpeed(GROUND_MAX_SPEED);
-        this.reloadAnimation();
     }
 
     /**

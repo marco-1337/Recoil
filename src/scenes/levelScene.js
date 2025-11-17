@@ -31,7 +31,7 @@ export default class LevelScene extends Phaser.Scene {
         this.cameras.main.setDeadzone(150, 250);
         this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.centerY, 0.3, 0.7);
         //new Platform(this, player, this.cameras.main.centerX, this.cameras.main.centerY + 455, 60, 5);
-
+ 
         this.initLevel();
     }
 
