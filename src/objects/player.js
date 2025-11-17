@@ -16,10 +16,12 @@ export default class Player extends Phaser.GameObjects.Container  {
    * @param {number} x Coordenada x
    * @param {number} y Coordenada y
    * @param {number} physicsWidthPercent Del 0 al 1, tamaño horizontal de la hitbox relativo al sprite 
-   * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, la cantidad eliminada es quitada de la parte de arriba del sprite
+   * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, 
+   * la cantidad eliminada es quitada de la parte de arriba del sprite
    */
     constructor(scene, x, y, physicsWidthPercent, physicsHeightPercent) {
         super(scene, x, y);
+
         this.scene.add.existing(this); 
 
         // PARÁMETROS
@@ -30,26 +32,37 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.canShoot = true;
         this.timeToShoot = 1.;
 
+        this.initSprites();
+        this.initPhysics(physicsWidthPercent, physicsHeightPercent);
+        this.initInput();
+    }
+
+    initSprites() {
         // SPRITE DE FONDO DEL ARMA
 
-        this.weaponBg = scene.add.sprite(-1, 3, 'weapon');
+        this.weaponBg = this.scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weaponBg);
         this.weaponBg.play('background_weapon');
 
         // SPRITE DEL CUERPO
 
-        this.playerBody = scene.add.sprite(0, 0, 'player');
+        this.playerBody = this.scene.add.sprite(0, 0, 'player');
         this.add(this.playerBody);
         this.playerBody.play('idle');
 
         // SPRITE DEL ARMA
 
-        this.weapon = scene.add.sprite(-1, 3, 'weapon');
+        this.weapon = this.scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weapon);
         this.weapon.play('front_weapon');
+    }
 
-        // FÍSICAS Y MOVIMIENTO
-
+    /** 
+   * @param {number} physicsWidthPercent Del 0 al 1, tamaño horizontal de la hitbox relativo al sprite
+   * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, 
+   *    la cantidad eliminada es quitada de la parte de arriba del sprite
+    */
+    initPhysics(physicsWidthPercent, physicsHeightPercent) {
         if (!physicsWidthPercent || physicsWidthPercent > 1 || physicsWidthPercent < 0) {
             physicsWidthPercent = 1;
         }
@@ -62,6 +75,8 @@ export default class Player extends Phaser.GameObjects.Container  {
         /** @type {Phaser.Physics.Arcade.Body} */
         this.body; //Para que VSCode lintee
 
+        this.body.setCollideWorldBounds(true);
+
         //Esto cambia la caja de colisiones, no el sprite
         this.body.setSize(this.playerBody.displayWidth * physicsWidthPercent, 
             this.playerBody.displayHeight * physicsHeightPercent);
@@ -72,14 +87,14 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
 
         this.body.setMaxSpeed(GROUND_MAX_SPEED);
+    }
 
-        // INPUT HORIZONTAL
-
+    initInput() {
         this.left = this.scene.input.keyboard.addKey('A');
         this.right = this.scene.input.keyboard.addKey('D');
 
         this.leftPress = false;
-        this.goingRight = false;
+        this.rightPress = false;
 
         this.left.on('down', () => {
             this.leftPress = true;
@@ -275,6 +290,17 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.horizontalMaxVelocity = GROUND_HORIZONTAL_MAX_VELOCITY;
         this.body.setMaxSpeed(GROUND_MAX_SPEED);
         this.reloadAnimation();
+    }
+
+    /**
+     * Mueve al jugador a la posición indicada y reinicia sus valores de movimiento y sprites
+     * @param {number} current - valor actual
+     * @param {number} target - valor objetivo
+     * @param {number} maxDelta - máximo cambio permitido
+     * @returns {number} nuevo valor
+     */
+    relocateAndResetMovement() {
+
     }
 
     /**
