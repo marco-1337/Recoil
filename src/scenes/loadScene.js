@@ -26,7 +26,7 @@ export default class TestScene extends Phaser.Scene {
     // listos tras las llamadas al preload, al ser asíncrono
     create() {
 
-		this.physics.world.TILE_BIAS = 100;
+		this.physics.world.TILE_BIAS = 128;
 
         // ANIMACIONES DEL CUERPO DEL PLAYER
         this.anims.create({
@@ -75,6 +75,6 @@ export default class TestScene extends Phaser.Scene {
     }
 
     update() {
-        this.scene.start('LevelScene');
+        this.scene.start('LevelScene', {levelID: 1});
     }
 }
