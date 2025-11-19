@@ -1,10 +1,10 @@
 const HORIZONTAL_GROUND_ACCELERATION = 7000;
 const HORIZONTAL_GROUND_DECELERATION = 8500;
-const GROUND_HORIZONTAL_MAX_VELOCITY = 650;
+const GROUND_HORIZONTAL_MAX_VELOCITY = 550;
 const JUMP_HORIZONTAL_BOOST = 100;
-const JUMP_HORIZONTAL_MAX_VELOCITY = 750;
+const JUMP_HORIZONTAL_MAX_VELOCITY = 650;
 const GROUND_MAX_SPEED = 1200;
-const JUMP_VALUE = -1200;
+const JUMP_VALUE = -1150;
 const SHOOT_VALUE = 1700;
 const AIR_MAX_SPEED = 2100;
 
@@ -17,7 +17,7 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
-   * Constructor de la Plataforma
+   * Constructor del jugador
    * @param {Phaser.Scene} scene Escena a la que pertenece la plataforma
    * @param {number} x Coordenada x
    * @param {number} y Coordenada y
@@ -37,7 +37,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.lookingAt = 1;
         this.jumpExecuted = false;
         this.canShoot = true;
-        this.timeToShoot = 1.;
+        this.timeToShoot = 200;
 
         this.initSprites();
         this.initPhysics(physicsWidthPercent, physicsHeightPercent);
@@ -259,7 +259,7 @@ export default class Player extends Phaser.GameObjects.Container  {
      */
     handleShoot(shootPoint) {
 
-        if (this.leftClickPressed) { 
+        if (this.leftClickPressed && this.canShoot) { 
 
             this.changeState(this.playerStates.AIR);
             
@@ -275,8 +275,16 @@ export default class Player extends Phaser.GameObjects.Container  {
             impulse.setLength(Math.max(SHOOT_VALUE, impulse.length()));
 
             this.body.setVelocity(impulse.x, impulse.y);
-
             this.leftClickPressed = false;
+            this.canShoot = false;
+
+            let shootTimer = this.scene.time.addEvent( {
+                    delay: this.timeToShoot, 
+                    callback: () => { 
+                        this.canShoot = true; 
+                        this.leftClickPressed = false; },
+                    loop: false
+            });
         }
     }
 

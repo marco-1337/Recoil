@@ -1,4 +1,5 @@
 import Player from '../objects/player.js';
+import Spikes from '../objects/spikes.js'
 
 export default class LevelScene extends Phaser.Scene {
     
@@ -9,7 +10,6 @@ export default class LevelScene extends Phaser.Scene {
 
         for (let i = 0; i < 10; i++) {
             this.levelsList.push('level_' + (i+1));
-            console.log('level_' + (i+1));
         }
     }
 
@@ -27,11 +27,10 @@ export default class LevelScene extends Phaser.Scene {
     }
 
     create() {
-
+        // esto hay que ponerlo en cada escena, no vale con ponerlo en solo la de carga
+		this.physics.world.TILE_BIAS = 50;
+        
         this.cameras.main.setDeadzone(150, 250);
-        this.player = new Player(this, this.cameras.main.centerX, this.cameras.main.centerY, 0.3, 0.7);
-        //new Platform(this, player, this.cameras.main.centerX, this.cameras.main.centerY + 455, 60, 5);
- 
         this.initLevel();
     }
 
@@ -40,6 +39,9 @@ export default class LevelScene extends Phaser.Scene {
     clearCurrentLevel() {
         this.terrainCollider.destroy();
         this.levelMap.layers.forEach(l => l.tilemapLayer.destroy());
+        this.flag.destroy(true);
+        this.player.destroy(true);
+        this.spikes.clear(true, true);
         this.levelMap.destroy();
     }
 
@@ -55,20 +57,48 @@ export default class LevelScene extends Phaser.Scene {
                 tileWidth: 50, 
                 tileHeight: 50
             });
-        
+
+            // Lectura de datos del nivel
+            const dataObjects = this.levelMap.getObjectLayer('data').objects;
+
+            let plX = 0, plY = 0;
+
+            dataObjects.forEach(obj => {
+                if (obj.name === 'spawn') {
+                    plX = obj.x + obj.width/2;
+                    plY = obj.y - obj.height/2;
+                }
+            });
+
+            this.player = new Player(this, plX, plY, 0.3, 0.7);
+            this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
+
+            // Creación de terreno
             const tilesetTerrain = this.levelMap.addTilesetImage('terrain_tileset', 'terrain_tileset');
             const terrainLayer = this.levelMap.createLayer('ground', tilesetTerrain);
             terrainLayer.setCollisionBetween(0, 999);
-
-            this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
-
             this.terrainCollider = this.physics.add.collider(this.player, terrainLayer);
 
-            this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
-            // Falta las bounds, esto debería hacerse según 
-            this.cameras.main.setBounds(-this.levelMap.tileWidth * 2, 0, 
-                this.levelMap.widthInPixels + this.levelMap.tileWidth * 4, 
-                this.levelMap.heightInPixels + this.levelMap.tileHeight);
+            // Pinchos
+            this.spikes = this.physics.add.staticGroup({classType: Spikes});
+            const spikeObjects = this.levelMap.getObjectLayer('spikes').objects;
+
+            spikeObjects.forEach(obj => {
+                // tambien se puede usar this.spikes.add(objeto) y añade el objeto, o addMultiple
+                this.spikes.create(obj.x + obj.width/2, obj.y - obj.height/2);
+            });
+            
+            this.physics.add.collider(this.player, this.spikes, null, null, this);
+
+            // Bandera de fin de juego
+            const flagMap = this.levelMap.createFromObjects('data', {name: 'flag', key: 'flag'});
+            this.flag = flagMap[0];
+
+            // Limites de la cámara y mundo
+            this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
+            this.cameras.main.setBounds(-this.levelMap.tileWidth * 4, -this.levelMap.tileHeight * 2, 
+                this.levelMap.widthInPixels + this.levelMap.tileWidth * 8, 
+                this.levelMap.heightInPixels + this.levelMap.tileHeight * 4);
         }
         else {
             throw new Error("El ID de nivel actual no es válido");
