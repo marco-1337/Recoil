@@ -1,4 +1,4 @@
-import Player from '../objects/player.js';
+import Player, {PLAYER_STATES} from '../objects/player.js';
 import Spikes from '../objects/spikes.js'
 
 export default class LevelScene extends Phaser.Scene {
@@ -29,7 +29,6 @@ export default class LevelScene extends Phaser.Scene {
     create() {
         // esto hay que ponerlo en cada escena, no vale con ponerlo en solo la de carga
 		this.physics.world.TILE_BIAS = 50;
-        
         this.cameras.main.setDeadzone(150, 250);
         this.initLevel();
     }
@@ -39,10 +38,11 @@ export default class LevelScene extends Phaser.Scene {
     clearCurrentLevel() {
         this.terrainCollider.destroy();
         this.levelMap.layers.forEach(l => l.tilemapLayer.destroy());
-        this.flag.destroy(true);
+        //this.flag.destroy(true);
         this.player.destroy(true);
         this.spikes.clear(true, true);
         this.levelMap.destroy();
+        this.heightDeathbox.destroy();
     }
 
     /** 
@@ -60,18 +60,26 @@ export default class LevelScene extends Phaser.Scene {
 
             // Lectura de datos del nivel
             const dataObjects = this.levelMap.getObjectLayer('data').objects;
-
             let plX = 0, plY = 0;
-
+            let yLimit = this.levelMap.heightInPixels;
             dataObjects.forEach(obj => {
                 if (obj.name === 'spawn') {
                     plX = obj.x + obj.width/2;
                     plY = obj.y - obj.height/2;
                 }
+                else if (obj.name === 'limit') {
+                    yLimit = obj.y - obj.height/2;
+                }
             });
 
+            // jugador
             this.player = new Player(this, plX, plY, 0.3, 0.7);
             this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
+
+            // suelo
+            this.levelLimit = this.physics.add.staticBody(0, yLimit, this.levelMap.widthInPixels, 50);
+            this.levelLimitCollider = this.physics.add.overlap(this.player, this.levelLimit, 
+                () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
 
             // Creación de terreno
             const tilesetTerrain = this.levelMap.addTilesetImage('terrain_tileset', 'terrain_tileset');
@@ -88,11 +96,8 @@ export default class LevelScene extends Phaser.Scene {
                 this.spikes.create(obj.x + obj.width/2, obj.y - obj.height/2);
             });
             
-            this.physics.add.collider(this.player, this.spikes, null, null, this);
-
-            // Bandera de fin de juego
-            const flagMap = this.levelMap.createFromObjects('data', {name: 'flag', key: 'flag'});
-            this.flag = flagMap[0];
+            this.physics.add.collider(this.player, this.spikes, 
+                () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
 
             // Limites de la cámara y mundo
             this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
@@ -103,6 +108,10 @@ export default class LevelScene extends Phaser.Scene {
         else {
             throw new Error("El ID de nivel actual no es válido");
         }
+    }
+
+    resetLevel() {
+        //this.player.restartIn
     }
 
     advanceLevel() {

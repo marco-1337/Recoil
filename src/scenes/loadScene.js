@@ -55,7 +55,28 @@ export default class TestScene extends Phaser.Scene {
 			frameRate: 24,
 			repeat: -1
 		});
-
+		this.anims.create({
+			key: 'death',
+			frames: [
+				{key: 'player', frame:7},
+				{key: 'player', frame:8},
+				{key: 'player', frame:9},
+				{key: 'player', frame:10}
+			],
+			frameRate: 10,
+			repeat: 0
+		});
+		this.anims.create({
+			key: 'spawn',
+			frames: [
+				{key: 'player', frame:11},
+				{key: 'player', frame:11},
+				{key: 'player', frame:12},
+				{key: 'player', frame:13}
+			],
+			frameRate: 9,
+			repeat: 0
+		});
         
         // Brazo frontal
         this.anims.create({
