@@ -18,6 +18,10 @@ export default class TestScene extends Phaser.Scene {
 			frameWidth: 50,
     		frameHeight: 50
 		});
+		this.load.spritesheet('shoot_effect', 'shoot_spritesheet.png', {
+			frameWidth: 130,
+    		frameHeight: 24
+		});
 		this.load.image('flag', 'flag.png');
 
 		this.load.setPath('assets/levels/');
@@ -78,6 +82,14 @@ export default class TestScene extends Phaser.Scene {
 			repeat: 0
 		});
         
+		// Disparo
+		this.anims.create({
+			key: 'shoot',
+			frames: this.anims.generateFrameNumbers('shoot_effect', {start:0, end:4}),
+			frameRate: 36,
+			repeat: 0
+		});
+
         // Brazo frontal
         this.anims.create({
 			key: 'front_weapon',

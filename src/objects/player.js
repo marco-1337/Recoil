@@ -26,6 +26,7 @@ export default class Player extends Phaser.GameObjects.Container  {
    * @param {number} physicsWidthPercent Del 0 al 1, tamaño horizontal de la hitbox relativo al sprite 
    * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, 
    * la cantidad eliminada es quitada de la parte de arriba del sprite
+   * @param {Phaser.GameObjects.Sprite} shotSprite
    * @param {number} shots Cantidad de tiros con los que empieza 
    */
     constructor(scene, x, y, physicsWidthPercent, physicsHeightPercent, shots) {
@@ -45,31 +46,19 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.initSprites();
         this.initPhysics(physicsWidthPercent, physicsHeightPercent);
         this.initInput();   
-
-        this.playerBody.on(Phaser.Animations.Events.ANIMATION_START, 
-            (anim) => { 
-                if (anim.key == 'spawn') this.setWeaponEnabled(false);
-            }
-        );
-
-        this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'spawn',
-            () => { 
-                this.changeState(PLAYER_STATES.AIR);
-                this.setWeaponEnabled(true);
-                this.body.setAllowGravity(true);
-            }
-        );
-
-        this.playerBody.on(Phaser.Animations.Events.ANIMATION_START, 
-            (anim) => { 
-                if (anim.key == 'death') this.setWeaponEnabled(false);
-            }
-        );
-
-        this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'death', 
-            () => { this.changeState(PLAYER_STATES.SPAWN);});
+        this.initAnimationsCallbacks();
 
         this.changeState(PLAYER_STATES.SPAWN);
+    }
+
+    destroy(fromScene) {
+
+        if (this.shotSprite) {
+            this.shotSprite.destroy(fromScene);
+            this.shotSprite = null;
+        }
+
+        super.destroy(fromScene);
     }
 
     initSprites() {
@@ -90,6 +79,15 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.weapon = this.scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weapon);
         this.weapon.play('front_weapon');
+
+        // EFFECTO DE DISPARO
+        // No es parte del container porque quiero que se vea el efecto donde se ha disparado
+
+        this.shootEffect = new Phaser.GameObjects.Sprite(this.scene, 0, 0, 'shoot_effect', 0);
+        this.scene.add.existing(this.shootEffect);
+        this.shootEffect.setActive(false);
+        this.shootEffect.setVisible(false);
+        this.shootEffect.setDepth(10);
     }
 
     /** 
@@ -178,6 +176,44 @@ export default class Player extends Phaser.GameObjects.Container  {
                 this.leftClickPressed = false;
             }
         });
+    }
+
+    initAnimationsCallbacks() {
+
+        // Deshabilitar sprites de brazos en el spawn
+        this.playerBody.on(Phaser.Animations.Events.ANIMATION_START, 
+            (anim) => { 
+                if (anim.key == 'spawn') this.setWeaponEnabled(false);
+            }
+        );
+
+        // Habilitar sprites de brazos en el spawn
+        this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'spawn',
+            () => { 
+                this.changeState(PLAYER_STATES.AIR);
+                this.setWeaponEnabled(true);
+                this.body.setAllowGravity(true);
+            }
+        );
+
+        // Deshabilitar sprites de brazos en la muerte
+        this.playerBody.on(Phaser.Animations.Events.ANIMATION_START, 
+            (anim) => { 
+                if (anim.key == 'death') this.setWeaponEnabled(false);
+            }
+        );
+        
+        // Cambiar a spawn despues de morir visiblemente
+        this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'death', 
+            () => { this.changeState(PLAYER_STATES.SPAWN);});
+
+        // Desactivar sprite de efecto de tiro al terminar animación
+        this.shootEffect.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'shoot',
+            () => {
+                this.shootEffect.setActive(false);
+                this.shootEffect.setVisible(false);
+            }
+        );
     }
 
     preUpdate(t,dt) {
@@ -301,7 +337,7 @@ export default class Player extends Phaser.GameObjects.Container  {
                     break;
 
                 case PLAYER_STATES.SPAWN:
-                    this.playerBody.play("spawn");
+                    this.playerBody.play('spawn');
                     this.setPosition(this.spawnX, this.spawnY);
                     this.body.setVelocity(0)
                     this.body.setAcceleration(0);
@@ -311,7 +347,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
                 case PLAYER_STATES.DEAD:
                     
-                    this.playerBody.play("death");
+                    this.playerBody.play('death');
                     this.body.setVelocity(0)
                     this.body.setAcceleration(0);
                     this.body.setAllowGravity(false);
@@ -348,7 +384,8 @@ export default class Player extends Phaser.GameObjects.Container  {
             this.pointer.worldX, this.pointer.worldY);
             
         // Como minimo siempre impulsa el retroceso de la escopeta, pero
-        // si ya se lleva una velocidad fevorable al disparo, se suma.
+        // si ya se lleva una velocidad fevorable al disparo, se suma. 
+        // (Esto se hace en el setLength)
         //
         // Las velocidad en contra del tiro no se opone
         let impulse = new Phaser.Math.Vector2((this.body.velocity.x/2 - (Math.cos(angle) * SHOOT_VALUE)),
@@ -363,6 +400,8 @@ export default class Player extends Phaser.GameObjects.Container  {
                 callback: () => { this.canShoot = true; },
                 loop: false
         });
+
+        this.setShootEffect(angle);
     }
 
     /**
@@ -418,6 +457,33 @@ export default class Player extends Phaser.GameObjects.Container  {
             }
             this.playerBody.play(anim);
         }
+    }
+
+    /**
+     * 
+     * @param {number} rot rotacion del arma
+     * @returns 
+     */
+    setShootEffect(rot) {
+
+        let angleVec = new Phaser.Math.Vector2(0, 0);
+        angleVec.setToPolar(rot, 120);
+        let effectPos = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
+
+        console.log(effectPos, angleVec);
+
+        // Esto se hace porque effectPos += vec no debería funcionar, supongo que porque
+        // effectPos es un vector2Alike, y no un vector2
+        effectPos.x += angleVec.x;
+        effectPos.y += angleVec.y;
+
+        this.shootEffect.setActive(true);
+        this.shootEffect.setVisible(true);
+        this.shootEffect.setPosition(effectPos.x, effectPos.y);
+        this.shootEffect.setRotation(rot);
+        this.shootEffect.play('shoot');
+
+        console.log(effectPos);
     }
 
     /**
