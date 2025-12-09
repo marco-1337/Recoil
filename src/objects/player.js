@@ -27,8 +27,6 @@ export default class Player extends Phaser.GameObjects.Container  {
    * @param {number} physicsWidthPercent Del 0 al 1, tamaño horizontal de la hitbox relativo al sprite 
    * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, 
    * la cantidad eliminada es quitada de la parte de arriba del sprite
-   * @param {Phaser.GameObjects.Sprite} shotSprite
-   * @param {number} shots Cantidad de tiros con los que empieza 
    */
     constructor(scene, x, y, physicsWidthPercent, physicsHeightPercent) {
         super(scene, x, y);
@@ -66,22 +64,16 @@ export default class Player extends Phaser.GameObjects.Container  {
      * Recoloca al jugador en un nuevo punto de spawn y lo spawnea ahí
      * @param {number} x 
      * @param {number} y 
-     * @param {number} shots
      */
-    setup(x, y, shots) {
-
-        console.log(shots);
+    setup(x, y) {
 
         this.spawnX = x;
         this.spawnY = y;
 
         this.setPosition(x, y);
 
-        this.defaultShots = shots;
-
-        if (this.UIMunition.length <= this.defaultShots) 
-            this.defaultShots = this.UIMunition.length;
-        else if ( this.defaultShots < 0) this.defaultShots = 0;
+        this.shots = 0;
+        this.setCurrentMunitionVisible();
 
         this.changeState(PLAYER_STATES.SPAWN);
     }
@@ -399,7 +391,7 @@ export default class Player extends Phaser.GameObjects.Container  {
                     this.body.setAcceleration(0);
                     this.body.setAllowGravity(false);
 
-                    this.shots = this.defaultShots;
+                    this.shots = 0;
                     this.setCurrentMunitionVisible();
                     
                     break;
@@ -470,7 +462,6 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     setCurrentMunitionVisible() {
-
 
         let i;
 

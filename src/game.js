@@ -28,7 +28,7 @@ let config = {
 			gravity: { y: 4000 },
 			fixedStep: true,
       		fps: 120, // para no atravesar cosas, por al parecer arcade no es continuo
-			debug: true // permite ver las cajas de colisión
+			debug: false // permite ver las cajas de colisión
 		}
 	}
 };

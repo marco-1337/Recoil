@@ -61,12 +61,6 @@
                  "height":50,
                  "id":26,
                  "name":"spawn",
-                 "properties":[
-                        {
-                         "name":"startingShots",
-                         "type":"string",
-                         "value":"2"
-                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -102,6 +96,42 @@
                  "width":58,
                  "x":845.666666666667,
                  "y":890
+                }, 
+                {
+                 "gid":15,
+                 "height":45,
+                 "id":52,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"ammo",
+                         "type":"string",
+                         "value":"1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":58,
+                 "x":420.5,
+                 "y":1237.5
+                }, 
+                {
+                 "gid":15,
+                 "height":45,
+                 "id":53,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"ammo",
+                         "type":"string",
+                         "value":"1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":58,
+                 "x":596.5,
+                 "y":790.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -132,7 +162,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":50,
+ "nextobjectid":54,
  "orientation":"orthogonal",
  "renderorder":"right-up",
  "tiledversion":"1.11.2",

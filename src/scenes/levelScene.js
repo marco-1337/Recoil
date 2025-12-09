@@ -3,7 +3,6 @@ import Platform from '../objects/platform.js';
 import Player, {PLAYER_STATES} from '../objects/player.js';
 import Spikes from '../objects/spikes.js'
 import Munition from '../objects/munition.js'
-import UIButton from '../ui/uiButton.js';
 import {addFullscreenButton} from '../utils.js';
 
 const LEVELS_AMMOUNT = 3;
@@ -72,14 +71,6 @@ export default class LevelScene extends Phaser.Scene {
 
         const height = this.sys.game.config.height;
 
-        new UIButton(this, 120, height - 40, 28, 'MainFont', 'Restart level', 
-                (pointer, localX, localY, event) => {
-                        
-                        this.resetLevel();
-                        event.stopPropagation();
-                        
-                }, '#ffffff80', '#ffffffff').setDepth(100);
-
         this.initLevel();
     }
 
@@ -113,7 +104,7 @@ export default class LevelScene extends Phaser.Scene {
 
             // Lectura de datos del nivel
             const dataObjects = this.levelMap.getObjectLayer('data').objects;
-            let plX = 0, plY = 0, plStartingShots = 0;
+            let plX = 0, plY = 0;
             let fX = 100, fY = 100;
             let yLimit = this.levelMap.heightInPixels;
 
@@ -121,12 +112,6 @@ export default class LevelScene extends Phaser.Scene {
                 if (obj.name === 'spawn') {
                     plX = obj.x + obj.width/2;
                     plY = obj.y - obj.height/2;
-
-                    if (obj.properties) {
-                        for (const { name, value } of obj.properties) {
-                            if (name === 'startingShots') plStartingShots = value;
-                        }
-                    }
                 }
                 else if (obj.name === 'limit') {
                     yLimit = obj.y - obj.height/2;
@@ -138,7 +123,7 @@ export default class LevelScene extends Phaser.Scene {
             });
 
             // Jugador
-            this.player.setup(plX, plY, plStartingShots);
+            this.player.setup(plX, plY);
             this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
 
             // Limite del mundo

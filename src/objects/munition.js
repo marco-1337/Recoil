@@ -1,5 +1,7 @@
 import {setupPhysicsBody} from '../utils.js';
 
+const ACTIVATION_DELAY = 3000;
+
 export default class Munition extends Phaser.GameObjects.Sprite { 
 
     static reloadSoundEffect = null;
@@ -20,6 +22,9 @@ export default class Munition extends Phaser.GameObjects.Sprite {
         this.scene.add.existing(this);
         this.scene.physics.add.existing(this);
 
+        /** @type {Phaser.Physics.Arcade.Body} */
+        this.body;
+
         this.body
             .setAllowGravity(false)
             .setImmovable(true);
@@ -36,14 +41,28 @@ export default class Munition extends Phaser.GameObjects.Sprite {
         this.scene.physics.add.overlap(this, player, (munition, player) => { 
                 Munition.reloadSoundEffect.play();
                 player.setMunition(this.ammount); 
-                this.body.enable = false
-                this.setVisible(false);
+                this.body.checkCollision.none = true;
+                this.setAlpha(0.5);
+
+                this.waitTimer = this.scene.time.delayedCall(ACTIVATION_DELAY, () => {
+                        this.reset();
+                    }
+                );
+
             }, null, this
         );
     }
 
+    destroy() {
+        if (this.waitTimer) {
+            this.waitTimer.remove(false);
+            this.waitTimer = null;
+        }
+        super.destroy();
+    }
+
     reset() {
-        this.body.enable = true; 
-        this.setVisible(true);
+        this.body.checkCollision.none = false;
+        this.setAlpha(1);                    
     }
 }

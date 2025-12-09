@@ -18,17 +18,13 @@ export default class Flag extends Phaser.GameObjects.Sprite {
         this.winSoundEffect = this.scene.sound.add('win', { loop: false });
 		this.winSoundEffect.setVolume(0.1);
 
-        this.canAdvance = true;
-
         this.scene.physics.add.overlap(this, player,
             () => { 
-                if (this.canAdvance) {
-                    this.winSoundEffect.play();
-                    this.canAdvance = false;
-                    this.scene.time.delayedCall(0, () => {
-                        this.scene.advanceLevel();
-                    });
-                }
+                this.body.checkCollision.none = true;
+                this.winSoundEffect.play();
+                this.scene.time.delayedCall(0, () => {
+                    this.scene.advanceLevel();
+                });
             }, null, this);
 
         /** @type {Phaser.Physics.Arcade.StaticBody} */
@@ -42,7 +38,7 @@ export default class Flag extends Phaser.GameObjects.Sprite {
      */
     setup(x, y) {
         this.setPosition(x, y);
-        this.canAdvance = true;
+        this.body.checkCollision.none = false;
         this.body.x = x - this.body.width/2;
         this.body.y = y - this.body.height/2 + (this.displayHeight - this.body.height)/2;
     }

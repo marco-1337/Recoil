@@ -61,12 +61,6 @@
                  "height":50,
                  "id":26,
                  "name":"spawn",
-                 "properties":[
-                        {
-                         "name":"startingShots",
-                         "type":"string",
-                         "value":"0"
-                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
