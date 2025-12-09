@@ -5,7 +5,7 @@ import Spikes from '../objects/spikes.js'
 import Munition from '../objects/munition.js'
 import {addFullscreenButton} from '../utils.js';
 
-const LEVELS_AMMOUNT = 3;
+export const LEVELS_AMMOUNT = 3;
 
 export default class LevelScene extends Phaser.Scene {
     

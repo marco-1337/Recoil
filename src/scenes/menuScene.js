@@ -1,5 +1,6 @@
 import UIButton from '../ui/uiButton.js'
 import {addFullscreenButton} from '../utils.js';
+import {LEVELS_AMMOUNT} from './levelScene.js'
 
 export default class MenuScene extends Phaser.Scene {
     
@@ -32,7 +33,7 @@ export default class MenuScene extends Phaser.Scene {
         let continueCallback = () => {};
         let continueColor = '#808080ff';
 
-        if (level) {
+        if (level && (level > 1 && level < LEVELS_AMMOUNT)) {
             continueLabel = 'Continue: (' + level + ')';
             animateContinue = true
             continueCallback = () => { this.scene.start('LevelScene', {levelID: level})};
