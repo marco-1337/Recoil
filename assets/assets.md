@@ -14,14 +14,12 @@ Todos los sprites de `creación propia` tienen licencia propietaria.
 - **player_spritesheet.png** - creación propia, Marco González
 - **test_sprite.png** - (temporal para pruebas) creación propia, Marco González
 
-### /web_resources
-
-#### /fonts
+### /fonts
 
 - **TurretRoad-ExtraBold.ttf** - Google Fonts
 - **TurretRoad-Regular.ttf** - Google Fonts
 
-#### /images
+### /images
 
 - **recoil_controles.png** - creación propia, Mariel Díez
 - **recoil_logo.png** - creación propia, Mariel Díez 

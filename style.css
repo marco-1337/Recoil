@@ -1,11 +1,11 @@
 @font-face {
   font-family: TurretRoad-Regular;
-  src: url(./assets/web_resources/fonts/TurretRoad-Regular.ttf); 
+  src: url(./assets/fonts/TurretRoad-Regular.ttf); 
 }
 
 @font-face {
   font-family: TurretRoad-ExtraBold;
-  src: url(./assets/web_resources/fonts/TurretRoad-ExtraBold.ttf); 
+  src: url(./assets/fonts/TurretRoad-ExtraBold.ttf); 
 }
 
 :root {
@@ -20,14 +20,14 @@
     --h2-font-size: 1.5rem;
     --p-font-size: 1.25rem;
 
-    --section-gap: 15vh;
-    --bottom-gap: 4vh;
+    --section-gap: 10vw;
+    --bottom-gap: 3vw;
     --section-content-gap: 7vh;
 
     --logo-height: 7rem;
 
-    --header-padding: 2rem 3rem;
-    --button-padding: 1rem 2vw;
+    --header-padding: 2rem 3vw;
+    --button-padding: 1rem 1.5vw;
     --button-margin: 0rem 1vw;
     --content-padding: 3rem;
     --author-padding: 2rem;
@@ -51,12 +51,14 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
     padding: 0;
     top: 0;
     overflow: hidden;
     border-style: none none dashed none;
     border-color: var(--primary-color);
     background-color: var(--secondary-color);
+    z-index: 10;
 }
 
 .buttons {
@@ -96,17 +98,14 @@ button:hover {
 
 .logo {
     max-height: 100%;
-    display: flex;
-    align-items: center;
-    margin-left: 10vw;
+    width: 33%;
+    text-align: center;
 }
 
 
 .logo img {
     height: var(--logo-height);
     width: auto;
-    display: block;
-    object-fit: contain;
 }
 
 main {
@@ -151,22 +150,23 @@ i {
 }
 
 .game-section {
-    max-width: 75%;
-    margin-top: 5vh;
+    max-width: 100%;
+    margin-top: 0;
+    scroll-margin-top: 9.5vh;
 }
 
-.game-display-section {
+#game-display-section {
+    padding: 0;
     width: 100%;
-    height: auto;
+    height: 35rem;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;     
+    position: relative;
+}
+
+#game-display-section canvas {
     border-style: solid;
     border-color: var(--primary-color);
-    padding: 0rem;
-}
-
-canvas {
-  display: block;
-  width: 100%;    
-  height: auto;
 }
 
 .credits-section {

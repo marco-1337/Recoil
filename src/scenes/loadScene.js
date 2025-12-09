@@ -9,7 +9,8 @@ export default class TestScene extends Phaser.Scene {
 
         this.load.setPath('assets/sprites/');
 
-        this.load.image('platform', 'test_sprite.png');
+		this.load.image('flag', 'flag.png')
+		this.load.image('platform', 'platform.png')
         this.load.spritesheet('player', 'player_spritesheet.png', 
             { frameWidth: 74, frameHeight: 115});
         this.load.spritesheet('weapon', 'gun_spritesheet.png', 
@@ -22,16 +23,41 @@ export default class TestScene extends Phaser.Scene {
 			frameWidth: 130,
     		frameHeight: 24
 		});
-		this.load.image('flag', 'flag.png');
+		this.load.spritesheet('munition', 'munition.png', {
+			frameWidth: 58,
+			frameHeight: 45
+		});
+		this.load.spritesheet('win_sprite', 'win_sprite.png', {
+			frameWidth: 768,
+			frameHeight: 432
+		});
 
 		this.load.setPath('assets/levels/');
-
 		this.load.tilemapTiledJSON('level_1', 'Level1.json');
+		this.load.tilemapTiledJSON('level_2', 'Level2.json');
+		this.load.tilemapTiledJSON('level_3', 'Level3.json');
+
+		this.load.setPath('assets/images/');
+		this.load.image('logo', 'recoil_logo_notext.png');
+		this.load.image('munition_UI', 'munition_ui.png');
+
+		// Hay que poner la ruta completa
+		this.loadFont('MainFont', 'assets/fonts/TurretRoad-ExtraBold.ttf');
+
+		this.load.setPath('assets/audio/');
+		this.load.audio('main_theme', 'maintheme_beta.mp3');
+		this.load.audio('win', 'win.mp3');
+		this.load.audio('death', 'death.mp3');
+		this.load.audio('shoot', 'shoot.mp3');
+		this.load.audio('reload', 'reload.mp3');
     }
 
     // Creación de animaciones, se crean después de la carga de los recursos porque pueden no estar
     // listos tras las llamadas al preload, al ser asíncrono
     create() {
+
+		// Cursor por defecto
+		this.input.setDefaultCursor('url(assets/images/recoil_cursor.cur), auto');
 
         // ANIMACIONES DEL CUERPO DEL PLAYER
         this.anims.create({
@@ -106,9 +132,35 @@ export default class TestScene extends Phaser.Scene {
 			repeat: -1
 		});
 
+		// Pantalla de victoria
+		this.anims.create({
+			key: 'win_screen',
+			frames: [
+				{key: 'win_sprite', frame:0, duration: 433},
+				{key: 'win_sprite', frame:1, duration: 133},
+				{key: 'win_sprite', frame:2, duration: 433},
+				{key: 'win_sprite', frame:1, duration: 133}
+			],
+			frameRate: 12,
+			repeat: -1
+		});
+		
+		let music = this.game.sound.add('main_theme', { loop: true });
+		music.setVolume(0.2);
+        music.play();
+
     }
 
     update() {
-        this.scene.start('LevelScene', {levelID: 1});
+        this.scene.start('MenuScene');
     }
+
+	loadFont(name, url) {
+		let newFont = new FontFace(name, `url(${url})`);
+		newFont.load().then(function (loaded) {
+			document.fonts.add(loaded);
+		}).catch(function (error) {
+			return error;
+		});
+	}
 }

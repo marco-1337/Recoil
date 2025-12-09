@@ -1,19 +1,23 @@
 import LoadScene from './scenes/loadScene.js';
 import LevelScene from './scenes/levelScene.js';
+import MenuScene from './scenes/menuScene.js';
+import WinScene from './scenes/winScene.js';
 
 let config = {
 	type: Phaser.AUTO,
-	parent: "game",
 	width: 1600,
 	height: 900,
+	parent: "game-display-section",
 	//backgroundColor: 0x3498db,
 	scale: {
 		mode: Phaser.Scale.FIT,
-		autoCenter: Phaser.Scale.CENTER_BOTH
+		autoCenter: Phaser.Scale.CENTER_BOTH,
+		expandParent: true,
+		fullscreenTarget: 'game-display-section'
 	},
-	pixelArt: true,
+	//pixelArt: true,
 	antialias: true,
-	scene: [LoadScene, LevelScene],
+	scene: [LoadScene, MenuScene, LevelScene, WinScene],
 	
 	physics: {  
 		default: 'arcade',
@@ -30,3 +34,4 @@ let config = {
 };
 
 const game = new Phaser.Game(config);
+game.sound.pauseOnBlur = false;

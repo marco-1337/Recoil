@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Phaser 3 Static Body Resize</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; margin: 0 auto; background: #222; }
+    </style>
+</head>
+<body>
+<script>
+class MyScene extends Phaser.Scene {
+    constructor() {
+        super('MyScene');
+    }
+
+    preload() {
+        // Nada que cargar, usaremos un rectángulo generado
+    }
+
+    create() {
+        // Crear un rectángulo como sprite
+        this.platform = this.add.rectangle(400, 300, 200, 50, 0x00ff00);
+        this.physics.add.existing(this.platform, true); // true = static body
+
+        // Inicializar tamaño del cuerpo
+        this.platform.body.setSize(300, 50);
+        this.platform.body.setOffset(0, 0); // Phaser usa offset desde el centro
+
+        // Variable para animar el tamaño
+        this.growing = true;
+    }
+}
+
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: { debug: true }
+    },
+    scene: MyScene
+};
+
+const game = new Phaser.Game(config);
+</script>
+</body>
+</html>

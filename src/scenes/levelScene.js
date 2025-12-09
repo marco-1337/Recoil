@@ -1,5 +1,12 @@
+import Flag from '../objects/flag.js';
+import Platform from '../objects/platform.js';
 import Player, {PLAYER_STATES} from '../objects/player.js';
 import Spikes from '../objects/spikes.js'
+import Munition from '../objects/munition.js'
+import UIButton from '../ui/uiButton.js';
+import {addFullscreenButton} from '../utils.js';
+
+const LEVELS_AMMOUNT = 3;
 
 export default class LevelScene extends Phaser.Scene {
     
@@ -8,13 +15,13 @@ export default class LevelScene extends Phaser.Scene {
 
         this.levelsList = [];
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < LEVELS_AMMOUNT; i++) {
             this.levelsList.push('level_' + (i+1));
         }
     }
 
     init(data) {
-        if (data.levelID > 10 || data.levelID < 1) {
+        if (data.levelID > LEVELS_AMMOUNT || data.levelID < 1) {
             this.currentLevelID = 0;
         }
         else {
@@ -27,9 +34,52 @@ export default class LevelScene extends Phaser.Scene {
     }
 
     create() {
+
+        addFullscreenButton(this);
+
+        // Cursor por defecto
+		this.input.setDefaultCursor('url(assets/images/recoil_cursor.cur), auto');
+
         // esto hay que ponerlo en cada escena, no vale con ponerlo en solo la de carga
 		this.physics.world.TILE_BIAS = 50;
-        this.cameras.main.setDeadzone(150, 250);
+        this.cameras.main.setDeadzone(100, 150);
+
+        this.player = new Player(this, 0, 0, 0.3, 0.7);
+        this.levelLimit = this.physics.add.staticBody(0, 10000, 1000, 50);
+        this.levelLimitCollider = this.physics.add.overlap(this.player, this.levelLimit, 
+            () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
+        this.flag = new Flag(this, this.player, 100, 100);
+
+        this.platforms = [];
+        this.munitions = [];
+
+        this.spikes = this.physics.add.staticGroup({classType: Spikes});
+
+        this.munitionTween = this.tweens.addCounter({
+            from: 0,
+            to: 1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+            onUpdate: (tween) => {
+                let value = tween.getValue();
+                this.munitions.forEach(obj => {
+                    obj.y = obj.startY - 25 * value;
+                });
+            }
+        });
+
+        const height = this.sys.game.config.height;
+
+        new UIButton(this, 120, height - 40, 28, 'MainFont', 'Restart level', 
+                (pointer, localX, localY, event) => {
+                        
+                        this.resetLevel();
+                        event.stopPropagation();
+                        
+                }, '#ffffff80', '#ffffffff').setDepth(100);
+
         this.initLevel();
     }
 
@@ -38,11 +88,14 @@ export default class LevelScene extends Phaser.Scene {
     clearCurrentLevel() {
         this.terrainCollider.destroy();
         this.levelMap.layers.forEach(l => l.tilemapLayer.destroy());
-        //this.flag.destroy(true);
-        this.player.destroy(true);
-        this.spikes.clear(true, true);
         this.levelMap.destroy();
-        this.heightDeathbox.destroy();
+        this.spikes.clear(true, true);
+
+        this.platforms.forEach(platform => platform.destroy());
+        this.platforms = [];
+
+        this.munitions.forEach(munition => munition.destroy());
+        this.munitions = [];
     }
 
     /** 
@@ -60,44 +113,107 @@ export default class LevelScene extends Phaser.Scene {
 
             // Lectura de datos del nivel
             const dataObjects = this.levelMap.getObjectLayer('data').objects;
-            let plX = 0, plY = 0;
+            let plX = 0, plY = 0, plStartingShots = 0;
+            let fX = 100, fY = 100;
             let yLimit = this.levelMap.heightInPixels;
+
             dataObjects.forEach(obj => {
                 if (obj.name === 'spawn') {
                     plX = obj.x + obj.width/2;
                     plY = obj.y - obj.height/2;
+
+                    if (obj.properties) {
+                        for (const { name, value } of obj.properties) {
+                            if (name === 'startingShots') plStartingShots = value;
+                        }
+                    }
                 }
                 else if (obj.name === 'limit') {
                     yLimit = obj.y - obj.height/2;
                 }
+                else if (obj.name === 'flag') {
+                    fX = obj.x + obj.width/2;
+                    fY = obj.y - obj.height/2;
+                }
             });
 
-            // jugador
-            this.player = new Player(this, plX, plY, 0.3, 0.7);
+            // Jugador
+            this.player.setup(plX, plY, plStartingShots);
             this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
 
-            // suelo
-            this.levelLimit = this.physics.add.staticBody(0, yLimit, this.levelMap.widthInPixels, 50);
-            this.levelLimitCollider = this.physics.add.overlap(this.player, this.levelLimit, 
-                () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
+            // Limite del mundo
+            this.levelLimit.position.set(0, yLimit);
+            this.levelLimit.setSize(this.levelMap.widthInPixels, 50);
+            this.levelLimit.updateCenter();
+
+            // Plataformas
+            const platformObjects = this.levelMap.getObjectLayer('platforms').objects;
+            const platformDestObjects = this.levelMap.getObjectLayer('platforms_dest').objects;
+            let platformsDataMap = {};
+            platformObjects.forEach(obj => {
+                if (obj.properties) {
+                    for (const { name, value } of obj.properties) {
+                        if (name === 'id') {
+                            platformsDataMap[value] = {
+                                xStart: obj.x + obj.width/2,
+                                yStart: obj.y - obj.height/2,
+                                xEnd: obj.x + obj.width/2,
+                                yEnd: obj.y - obj.height/2,
+                            }
+                        }
+                    }
+                }
+            });
+
+            platformDestObjects.forEach(obj => {
+                if (obj.properties) {
+                    for (const { name, value } of obj.properties) {
+                        if (name === 'id') {
+                            if (platformsDataMap[value]) {
+                                platformsDataMap[value].xEnd = obj.x + obj.width/2;
+                                platformsDataMap[value].yEnd = obj.y - obj.height/2;   
+                            }
+                        }
+                    }
+                }
+            });
+
+            Object.values(platformsDataMap).forEach( val => {
+                this.platforms.push(
+                    new Platform(this, this.player, val.xStart, val.yStart, val.xEnd, val.yEnd));
+            });
+            
+            // Munición
+            const ammoObjects = this.levelMap.getObjectLayer('munition').objects;
+            ammoObjects.forEach(obj => {
+                if (obj.properties) {
+                    for (const { name, value } of obj.properties) {
+                        if (name === 'ammo') {
+                            this.munitions.push(new Munition(this, this.player, obj.x + obj.width/2, 
+                                obj.y - obj.height/2, value));
+                        }
+                    }
+                }
+            });
 
             // Creación de terreno
             const tilesetTerrain = this.levelMap.addTilesetImage('terrain_tileset', 'terrain_tileset');
             const terrainLayer = this.levelMap.createLayer('ground', tilesetTerrain);
+            terrainLayer.setDepth(10);
             terrainLayer.setCollisionBetween(0, 999);
             this.terrainCollider = this.physics.add.collider(this.player, terrainLayer);
 
-            // Pinchos
-            this.spikes = this.physics.add.staticGroup({classType: Spikes});
+            // Pinchos, esto podría estar en una pool, pero no lo está
             const spikeObjects = this.levelMap.getObjectLayer('spikes').objects;
-
             spikeObjects.forEach(obj => {
                 // tambien se puede usar this.spikes.add(objeto) y añade el objeto, o addMultiple
                 this.spikes.create(obj.x + obj.width/2, obj.y - obj.height/2);
             });
-            
             this.physics.add.collider(this.player, this.spikes, 
                 () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
+
+            // Bandera
+            this.flag.setup(fX, fY);
 
             // Limites de la cámara y mundo
             this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
@@ -111,22 +227,22 @@ export default class LevelScene extends Phaser.Scene {
     }
 
     resetLevel() {
-        //this.player.restartIn
+        this.player.changeState(PLAYER_STATES.SPAWN);
+        this.platforms.forEach( platform => platform.reset());
+        this.munitions.forEach( munition => munition.reset());
     }
 
     advanceLevel() {
-        this.clearCurrentLevel();
-        if (this.currentLevelID < (this.levelsList.length - 1)) {
+        console.log(this.currentLevelID);
+        if (this.currentLevelID < this.levelsList.length - 1) {
+            this.clearCurrentLevel();
             this.currentLevelID++;
+            localStorage.setItem('level', this.currentLevelID + 1)
             this.initLevel();
         }
         else {
-            this.gameEnd();
+            localStorage.removeItem('level');
+            this.scene.start('WinScene');
         }
     }
-
-    gameEnd() {
-        // to do
-    }
-
 }

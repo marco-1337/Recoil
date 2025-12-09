@@ -1,6 +1,6 @@
-import setupPhysicsBody from './physicsUtils.js';
+import {setupPhysicsBody} from '../utils.js';
 
-export default class Spikes extends Phaser.GameObjects.Sprite { 
+export default class Spikes extends Phaser.GameObjects.Sprite {
     /**
    * Constructor del jugador
    * @param {Phaser.Scene} scene Escena a la que pertenece

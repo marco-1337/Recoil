@@ -8,6 +8,7 @@ const JUMP_VALUE = -1150;
 const SHOOT_VALUE = 1700;
 const AIR_MAX_SPEED = 2100;
 const SHOOT_INTERVAL = 300;
+const MAX_AMMO = 3;
 
 export const PLAYER_STATES = Object.freeze({
         GROUNDED: 0,
@@ -29,7 +30,7 @@ export default class Player extends Phaser.GameObjects.Container  {
    * @param {Phaser.GameObjects.Sprite} shotSprite
    * @param {number} shots Cantidad de tiros con los que empieza 
    */
-    constructor(scene, x, y, physicsWidthPercent, physicsHeightPercent, shots) {
+    constructor(scene, x, y, physicsWidthPercent, physicsHeightPercent) {
         super(scene, x, y);
 
         this.spawnX = x;
@@ -47,8 +48,8 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.initPhysics(physicsWidthPercent, physicsHeightPercent);
         this.initInput();   
         this.initAnimationsCallbacks();
-
-        this.changeState(PLAYER_STATES.SPAWN);
+        this.initMunitionUI();
+        this.initSoundEffects();
     }
 
     destroy(fromScene) {
@@ -61,8 +62,33 @@ export default class Player extends Phaser.GameObjects.Container  {
         super.destroy(fromScene);
     }
 
+    /**
+     * Recoloca al jugador en un nuevo punto de spawn y lo spawnea ahí
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} shots
+     */
+    setup(x, y, shots) {
+
+        console.log(shots);
+
+        this.spawnX = x;
+        this.spawnY = y;
+
+        this.setPosition(x, y);
+
+        this.defaultShots = shots;
+
+        if (this.UIMunition.length <= this.defaultShots) 
+            this.defaultShots = this.UIMunition.length;
+        else if ( this.defaultShots < 0) this.defaultShots = 0;
+
+        this.changeState(PLAYER_STATES.SPAWN);
+    }
+
     initSprites() {
         // SPRITE DE FONDO DEL ARMA
+        this.setDepth(1);
 
         this.weaponBg = this.scene.add.sprite(-1, 3, 'weapon');
         this.add(this.weaponBg);
@@ -87,7 +113,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.scene.add.existing(this.shootEffect);
         this.shootEffect.setActive(false);
         this.shootEffect.setVisible(false);
-        this.shootEffect.setDepth(10);
+        this.shootEffect.setDepth(5);
     }
 
     /** 
@@ -203,9 +229,9 @@ export default class Player extends Phaser.GameObjects.Container  {
             }
         );
         
-        // Cambiar a spawn despues de morir visiblemente
+        // Cambiar a spawn despues de morir visiblemente, esto se hace reseteando el nivel
         this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'death', 
-            () => { this.changeState(PLAYER_STATES.SPAWN);});
+            () => { this.scene.resetLevel()});
 
         // Desactivar sprite de efecto de tiro al terminar animación
         this.shootEffect.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'shoot',
@@ -214,6 +240,36 @@ export default class Player extends Phaser.GameObjects.Container  {
                 this.shootEffect.setVisible(false);
             }
         );
+    }
+
+    initMunitionUI() {
+
+        const width = this.scene.sys.game.config.width;
+        const height = this.scene.sys.game.config.height;
+
+        this.UIMunition = [];
+
+        const texture = this.scene.textures.get('munition_UI');
+        const iconWidth = texture.getSourceImage().width;
+        const iconHeight = texture.getSourceImage().height;
+
+        for (let i = 0; i < MAX_AMMO; ++i) {
+            this.UIMunition.push(this.scene.add.image(iconWidth * 2.5 + iconWidth * 2.5 * i, 
+                iconHeight, 'munition_UI')
+                .setScrollFactor(0)
+                .setDepth(100)
+                .setScale(1.5)
+                .setRotation(Phaser.Math.DegToRad(33))
+                .setVisible(false));
+        }
+    }
+
+    initSoundEffects() {
+        this.deathSoundEffect = this.scene.sound.add('death', { loop: false });
+		this.deathSoundEffect.setVolume(0.2);
+
+        this.shootSoundEffect = this.scene.sound.add('shoot', { loop: false });
+		this.shootSoundEffect.setVolume(0.1);
     }
 
     preUpdate(t,dt) {
@@ -297,7 +353,7 @@ export default class Player extends Phaser.GameObjects.Container  {
             const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
             this.pointer.updateWorldPoint(this.scene.cameras.main);
 
-            if (this.shootFlag && this.canShoot) {
+            if (this.shootFlag && this.canShoot && this.shots > 0) {
                 this.handleShoot(shootPoint);
                 this.shootFlag = false;
             }
@@ -343,10 +399,14 @@ export default class Player extends Phaser.GameObjects.Container  {
                     this.body.setAcceleration(0);
                     this.body.setAllowGravity(false);
 
+                    this.shots = this.defaultShots;
+                    this.setCurrentMunitionVisible();
+                    
                     break;
 
                 case PLAYER_STATES.DEAD:
                     
+                    this.deathSoundEffect.play();
                     this.playerBody.play('death');
                     this.body.setVelocity(0)
                     this.body.setAcceleration(0);
@@ -380,6 +440,8 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         this.changeState(PLAYER_STATES.AIR);
         
+        this.shootSoundEffect.play();
+
         const angle = Phaser.Math.Angle.Between(shootPoint.x, shootPoint.y, 
             this.pointer.worldX, this.pointer.worldY);
             
@@ -395,6 +457,9 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.body.setVelocity(impulse.x, impulse.y);
         this.canShoot = false;
 
+        this.shots -= 1;
+        this.UIMunition[this.shots].setVisible(false);
+
         this.scene.time.addEvent( {
                 delay: SHOOT_INTERVAL, 
                 callback: () => { this.canShoot = true; },
@@ -402,6 +467,20 @@ export default class Player extends Phaser.GameObjects.Container  {
         });
 
         this.setShootEffect(angle);
+    }
+
+    setCurrentMunitionVisible() {
+
+
+        let i;
+
+        for (i = 0; i < this.shots && i < this.UIMunition.length; ++i) {
+            this.UIMunition[i].setVisible(true);
+        }
+
+        for (; i < this.UIMunition.length; ++i) {
+            this.UIMunition[i].setVisible(false);
+        }
     }
 
     /**
@@ -462,15 +541,12 @@ export default class Player extends Phaser.GameObjects.Container  {
     /**
      * 
      * @param {number} rot rotacion del arma
-     * @returns 
      */
     setShootEffect(rot) {
 
         let angleVec = new Phaser.Math.Vector2(0, 0);
         angleVec.setToPolar(rot, 120);
         let effectPos = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
-
-        console.log(effectPos, angleVec);
 
         // Esto se hace porque effectPos += vec no debería funcionar, supongo que porque
         // effectPos es un vector2Alike, y no un vector2
@@ -482,8 +558,15 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.shootEffect.setPosition(effectPos.x, effectPos.y);
         this.shootEffect.setRotation(rot);
         this.shootEffect.play('shoot');
+    }
 
-        console.log(effectPos);
+    /**
+     * 
+     * @param {number} munition
+     */
+    setMunition(munition) {
+        this.shots = Phaser.Math.Clamp(munition, 0, MAX_AMMO);
+        this.setCurrentMunitionVisible();
     }
 
     /**
