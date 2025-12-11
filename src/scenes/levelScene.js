@@ -5,7 +5,7 @@ import Spikes from '../objects/spikes.js'
 import Munition from '../objects/munition.js'
 import {addFullscreenButton} from '../utils.js';
 
-export const LEVELS_AMMOUNT = 3;
+export const LEVELS_AMMOUNT = 5;
 
 export default class LevelScene extends Phaser.Scene {
     
@@ -41,7 +41,7 @@ export default class LevelScene extends Phaser.Scene {
 
         // esto hay que ponerlo en cada escena, no vale con ponerlo en solo la de carga
 		this.physics.world.TILE_BIAS = 50;
-        this.cameras.main.setDeadzone(100, 150);
+        this.cameras.main.setDeadzone(100, 70);
 
         this.player = new Player(this, 0, 0, 0.3, 0.7);
         this.levelLimit = this.physics.add.staticBody(0, 10000, 1000, 50);

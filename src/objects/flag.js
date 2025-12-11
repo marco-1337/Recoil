@@ -13,7 +13,7 @@ export default class Flag extends Phaser.GameObjects.Sprite {
 
         this.scene.add.existing(this);
         this.scene.physics.add.existing(this, true);
-        setupPhysicsBody(this, 0.6, 0.8, true);
+        setupPhysicsBody(this, 0.7, 1., true);
 
         this.winSoundEffect = this.scene.sound.add('win', { loop: false });
 		this.winSoundEffect.setVolume(0.1);

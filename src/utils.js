@@ -11,7 +11,7 @@ export function setupPhysicsBody(gameObject, physicsWidthPercent = 1, physicsHei
 
     if (!gameObject.body) return;
 
-    physicsWidthPercent = Phaser.Math.Clamp(physicsWidthPercent, 0, 1);
+    physicsWidthPercent = Phaser.Math.Clamp(physicsWidthPercent, 0, 2);
     physicsHeightPercent = Phaser.Math.Clamp(physicsHeightPercent, 0, 1);
 
     //Esto cambia la caja de colisiones, no el sprite

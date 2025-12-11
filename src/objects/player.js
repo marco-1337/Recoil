@@ -5,9 +5,9 @@ const JUMP_HORIZONTAL_BOOST = 100;
 const JUMP_HORIZONTAL_MAX_VELOCITY = 650;
 const GROUND_MAX_SPEED = 1200;
 const JUMP_VALUE = -1150;
-const SHOOT_VALUE = 1700;
+const SHOOT_VALUE = 1750;
 const AIR_MAX_SPEED = 2100;
-const SHOOT_INTERVAL = 300;
+const SHOOT_INTERVAL = 150;
 const MAX_AMMO = 3;
 
 export const PLAYER_STATES = Object.freeze({
@@ -191,6 +191,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.scene.input.on('pointerup', pointer => {
 
             if (!pointer.leftButtonDown()) {
+                console.log("aaaa");
                 this.leftClickPressed = false;
             }
         });
@@ -442,10 +443,16 @@ export default class Player extends Phaser.GameObjects.Container  {
         // (Esto se hace en el setLength)
         //
         // Las velocidad en contra del tiro no se opone
-        let impulse = new Phaser.Math.Vector2((this.body.velocity.x/2 - (Math.cos(angle) * SHOOT_VALUE)),
-            this.body.velocity.y/2 - (Math.sin(angle) * SHOOT_VALUE));
-        impulse.setLength(Math.max(SHOOT_VALUE, impulse.length()));
+        let impulseMagnitudeVector = 
+            new Phaser.Math.Vector2((this.body.velocity.x - (Math.cos(angle) * SHOOT_VALUE)),
+                this.body.velocity.y - (Math.sin(angle) * SHOOT_VALUE));
 
+        let impulse = new Phaser.Math.Vector2(-Math.cos(angle), -Math.sin(angle));
+
+        impulse.setLength(Phaser.Math.Clamp(impulseMagnitudeVector.length(), 
+            SHOOT_VALUE, SHOOT_VALUE * 1.2));
+
+        this.body.setAcceleration(0);
         this.body.setVelocity(impulse.x, impulse.y);
         this.canShoot = false;
 
@@ -556,6 +563,7 @@ export default class Player extends Phaser.GameObjects.Container  {
      * @param {number} munition
      */
     setMunition(munition) {
+        this.shootFlag = false;
         this.shots = Phaser.Math.Clamp(munition, 0, MAX_AMMO);
         this.setCurrentMunitionVisible();
     }

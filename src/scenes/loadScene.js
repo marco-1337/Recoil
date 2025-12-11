@@ -36,6 +36,8 @@ export default class TestScene extends Phaser.Scene {
 		this.load.tilemapTiledJSON('level_1', 'Level1.json');
 		this.load.tilemapTiledJSON('level_2', 'Level2.json');
 		this.load.tilemapTiledJSON('level_3', 'Level3.json');
+		this.load.tilemapTiledJSON('level_4', 'Level4.json');
+		this.load.tilemapTiledJSON('level_5', 'Level5.json');
 
 		this.load.setPath('assets/images/');
 		this.load.image('logo', 'recoil_logo_notext.png');

@@ -33,7 +33,10 @@ export default class MenuScene extends Phaser.Scene {
         let continueCallback = () => {};
         let continueColor = '#808080ff';
 
-        if (level && (level > 1 && level < LEVELS_AMMOUNT)) {
+        console.log(level);
+
+        if (level && (level > 1 && level < LEVELS_AMMOUNT + 1)) {
+
             continueLabel = 'Continue: (' + level + ')';
             animateContinue = true
             continueCallback = () => { this.scene.start('LevelScene', {levelID: level})};

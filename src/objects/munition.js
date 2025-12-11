@@ -29,7 +29,7 @@ export default class Munition extends Phaser.GameObjects.Sprite {
             .setAllowGravity(false)
             .setImmovable(true);
 
-        setupPhysicsBody(this, 0.5, 0.8, false);
+        setupPhysicsBody(this, 0.8, 1.2, false);
 
         this.ammount = ammount;
 
