@@ -147,9 +147,9 @@ export default class TestScene extends Phaser.Scene {
 		});
 		
 		let music_intro = this.game.sound.add('main_theme_intro', { loop: false });
-		music_intro.setVolume(0.2);
+		music_intro.setVolume(0.1);
 		let music_loop = this.sound.add('main_theme_loop', {loop: true});
-		music_loop.setVolume(0.2);
+		music_loop.setVolume(0.1);
 
 		music_intro.play();
 
