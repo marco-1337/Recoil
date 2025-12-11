@@ -45,7 +45,8 @@ export default class TestScene extends Phaser.Scene {
 		this.loadFont('MainFont', 'assets/fonts/TurretRoad-ExtraBold.ttf');
 
 		this.load.setPath('assets/audio/');
-		this.load.audio('main_theme', 'maintheme_beta.mp3');
+		this.load.audio('main_theme_intro', 'Shellshock_intro.mp3');
+		this.load.audio('main_theme_loop', 'Shellshock_loop.mp3');
 		this.load.audio('win', 'win.mp3');
 		this.load.audio('death', 'death.mp3');
 		this.load.audio('shoot', 'shoot.mp3');
@@ -145,10 +146,16 @@ export default class TestScene extends Phaser.Scene {
 			repeat: -1
 		});
 		
-		let music = this.game.sound.add('main_theme', { loop: true });
-		music.setVolume(0.2);
-        music.play();
+		let music_intro = this.game.sound.add('main_theme_intro', { loop: false });
+		music_intro.setVolume(0.2);
+		let music_loop = this.sound.add('main_theme_loop', {loop: true});
+		music_loop.setVolume(0.2);
 
+		music_intro.play();
+
+		music_intro.once('complete', function() {
+			music_loop.play();
+		});
     }
 
     update() {
