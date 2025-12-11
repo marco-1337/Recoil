@@ -21,7 +21,8 @@
     --p-font-size: 1.25rem;
 
     --section-gap: 10vw;
-    --bottom-gap: 3vw;
+    --footer-gap: 5vw;
+    --bottom-gap: 1vw;
     --section-content-gap: 7vh;
 
     --logo-height: 7rem;
@@ -202,17 +203,19 @@ i {
 .author {
     width: 25%;
     padding: var(--author-padding);
-    justify-content: space-between;
+    justify-content: flex-start;
     display: flex;
     flex-direction: column;
 }
 
 .author p{
     text-align: center;
+    padding-top: 2vh;
 }
 
+
 footer {
-    margin-top: var(--section-gap);
+    margin-top: var(--footer-gap);
     padding-bottom: var(--bottom-gap);;
     color: var(--primary-color);
     text-align: center;
