@@ -83,6 +83,7 @@ export default class LevelScene extends Phaser.Scene {
 
         this.spikes = this.physics.add.staticGroup({classType: Spikes});
 
+        // Recorre las cajas de munición y las mueve en base al tween lineal 
         this.munitionTween = this.tweens.addCounter({
             from: 0,
             to: 1,

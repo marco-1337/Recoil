@@ -1,6 +1,10 @@
 const PLATFORM_SPEED = 200;
 const PLATFORM_WAIT_TIME = 2500; // milisegundos
 
+/**
+ * Plataformas móviles. Se mueven a una velocidad fija y se quedan paradas en sus destinos
+ * un tiempo fijo.
+ */
 export default class Platform extends Phaser.GameObjects.Sprite {
 
     /**
@@ -27,10 +31,13 @@ export default class Platform extends Phaser.GameObjects.Sprite {
         /** @type {Phaser.Physics.Arcade.Body} */
         this.body;
 
+        // La plataforma actúa como un cuerpo estático pese a ser dinámico
         this.body
             .setAllowGravity(false)
             .setImmovable(true);
 
+        // Vector velocidad por defecto de la plataforma, se guarda para 
+        // invertirlo al llegar a su destino
         this.velocity = new Phaser.Math.Vector2(xEnd, yEnd)
             .subtract(new Phaser.Math.Vector2(xStart, yStart))
             .normalize()
@@ -38,17 +45,25 @@ export default class Platform extends Phaser.GameObjects.Sprite {
         
         this.body.setVelocity(this.velocity.x, this.velocity.y);
 
+        // Guardado para reseteo
         this.defaultOrigin = new Phaser.Math.Vector2(xStart, yStart);
         this.defaultTarget = new Phaser.Math.Vector2(xEnd, yEnd);
 
+        // Estas referencias se intercambian una vez llegadas al destino
         this.origin = new Phaser.Math.Vector2(xStart, yStart);
         this.target = new Phaser.Math.Vector2(xEnd, yEnd);
+
+        // Se guarda para calcular si te pasas del destino y reajustar
         this.previousDistance = new Phaser.Math.Vector2(this.x, this.y).distance(this.target);
 
+        // Indica si está en espera o si debe moverse
         this.moving = true;
     }
 
     destroy() {
+        // Importante, si el callback se ha lanzado y no se destruye el timer
+        // se ejecuta despues y puede causar errores de referencias nulas. Por eso
+        // hay que borrarlo
         if (this.waitTimer) {
             this.waitTimer.remove(false);
             this.waitTimer = null;
@@ -56,12 +71,18 @@ export default class Platform extends Phaser.GameObjects.Sprite {
         super.destroy();
     }
 
+    /**
+     * Si la plataforma se tiene que mover la mueve. 
+     * Comprueba si ha llegado a su destino
+     */
     preUpdate() {
 
         if (this.moving) {
             let distance = new Phaser.Math.Vector2(this.x, this.y).distance(this.target);
 
-            // indica que la plataforma se pasa, asi que se reajusta y se para
+            //Si la distancia es mayor que la distancia previa se ha pasado del destino, porque
+            // la distancia hacia el target debería siempre decrecer 
+            // Si se pasa se llama a waitAndSwitch
             if (distance > this.previousDistance) {
                 this.waitAndSwitch();
             }
@@ -70,6 +91,12 @@ export default class Platform extends Phaser.GameObjects.Sprite {
         }
     }
 
+    /**
+     * Ajusta la plataforma al target por si se ha pasado.
+     * 
+     * Inicia el timer de espera, cuando se complete, swapea el destino, la velocidad
+     * e inicia el movimiento
+     */
     waitAndSwitch() {
 
         this.hasReseted = false;
@@ -94,6 +121,10 @@ export default class Platform extends Phaser.GameObjects.Sprite {
         });
     }
 
+    /**
+     * Lo llama LevelScene. Resetea la plataforma al origen de construcción y
+     * si el timer estaba esperando para lanzar el callback se cancela.
+     */
     reset() {
 
         if(this.waitTimer) { this.waitTimer.destroy(); }

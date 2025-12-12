@@ -1,5 +1,12 @@
 import {setupPhysicsBody} from '../utils.js';
 
+/**
+ * Pinchos.
+ * 
+ * El único propósito de esta clase es encapsular los pinchos para añadirlos al grupo
+ * de colisión en la generadon de pinchos de LevelScene::initLevel() así como ajustar
+ * la caja de colisión de los pinchos (setupPhysicsBody)
+ */
 export default class Spikes extends Phaser.GameObjects.Sprite {
     /**
    * Constructor del jugador

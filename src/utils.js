@@ -1,9 +1,11 @@
 import UIButton from './ui/uiButton.js'
 
-/**
- * @param {Phaser.GameObjects.Sprite|Phaser.GameObjects.Image} gameObject El objeto que ya existe en la escena
- * @param {number} physicsWidthPercent Del 0 al 1, ancho relativo al sprite
- * @param {number} physicsHeightPercent Del 0 al 1, alto relativo al sprite
+/**Utilidad para ajustar la caja de un objeto con body acorde al porcentaje que quiere que 
+ * ocupe sobre su sprite o imagen
+ * @param {Phaser.GameObjects.Sprite|Phaser.GameObjects.Image} gameObject El objeto que 
+ * ya existe en la escena
+ * @param {number} physicsWidthPercent Del 0 al 2, ancho porcentual relativo al sprite
+ * @param {number} physicsHeightPercent Del 0 al 2, alto porcentual relativo al sprite
  * @param {boolean} yFixedDown Si la hitbox se pega abajo del sprite
  */
 export function setupPhysicsBody(gameObject, physicsWidthPercent = 1, physicsHeightPercent = 1, 
@@ -29,6 +31,7 @@ export function setupPhysicsBody(gameObject, physicsWidthPercent = 1, physicsHei
 }
 
 /**
+ * Utilidad para generar el botón de pantalla completa
  * @param {Phaser.Scene} scene escena para añadir el botón
  */
 export function addFullscreenButton(scene) {

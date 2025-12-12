@@ -1,6 +1,7 @@
 export default class UIButton extends Phaser.GameObjects.Container {
 
-    /**
+    /** Bottón compuesto por una etiqueta de texto. Implementa "animaciones" con los callbacks 
+     * de hover y callbacks de pulsación 
    * @param {Phaser.Scene} scene Escena a la que pertenece el botón
    * @param {number} x Coordenada x
    * @param {number} y Coordenada y

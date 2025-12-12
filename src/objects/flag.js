@@ -1,5 +1,8 @@
 import {setupPhysicsBody} from '../utils.js';
 
+/**
+ * Bandera de fin de juego
+ */
 export default class Flag extends Phaser.GameObjects.Sprite { 
     /**
    * Constructor de la bandera de fin de juego
@@ -15,23 +18,26 @@ export default class Flag extends Phaser.GameObjects.Sprite {
         this.scene.physics.add.existing(this, true);
         setupPhysicsBody(this, 0.7, 1., true);
 
+        // Efecto de sonido de victoria
         this.winSoundEffect = this.scene.sound.add('win', { loop: false });
 		this.winSoundEffect.setVolume(0.1);
 
         this.scene.physics.add.overlap(this, player,
             () => { 
+                // IMPORTANTE, desactiva automaticamente la detección de colisiones
+                // para que no se avance mas de una vez
                 this.body.checkCollision.none = true;
                 this.winSoundEffect.play();
-                this.scene.time.delayedCall(0, () => {
-                    this.scene.advanceLevel();
-                });
+
+                this.scene.advanceLevel();
+
             }, null, this);
 
         /** @type {Phaser.Physics.Arcade.StaticBody} */
         this.body;
     }
 
-    /** Recoloca la bandera
+    /** Recoloca la bandera, se llama al inciar un nivel desde LevelScene
      * @param {number} x Coordenada x
      * @param {number} y Coordenada y
      * @param {Player} player Jugador
