@@ -1,5 +1,5 @@
 const PLATFORM_SPEED = 200;
-const PLATFORM_WAIT_TIME = 1000; // milisegundos
+const PLATFORM_WAIT_TIME = 2500; // milisegundos
 
 export default class Platform extends Phaser.GameObjects.Sprite {
 
@@ -95,6 +95,8 @@ export default class Platform extends Phaser.GameObjects.Sprite {
     }
 
     reset() {
+
+        if(this.waitTimer) { this.waitTimer.destroy(); }
 
         this.origin.copy(this.defaultOrigin);
         this.target.copy(this.defaultTarget);

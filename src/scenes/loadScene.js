@@ -1,4 +1,6 @@
-export default class TestScene extends Phaser.Scene {
+import {LEVELS_AMMOUNT} from './levelScene.js'
+
+export default class LoadScene extends Phaser.Scene {
     
     constructor() {
         super({ key: 'LoadScene' });
@@ -33,11 +35,10 @@ export default class TestScene extends Phaser.Scene {
 		});
 
 		this.load.setPath('assets/levels/');
-		this.load.tilemapTiledJSON('level_1', 'Level1.json');
-		this.load.tilemapTiledJSON('level_2', 'Level2.json');
-		this.load.tilemapTiledJSON('level_3', 'Level3.json');
-		this.load.tilemapTiledJSON('level_4', 'Level4.json');
-		this.load.tilemapTiledJSON('level_5', 'Level5.json');
+
+		for (let i = 1; i <= LEVELS_AMMOUNT; ++i) {
+			this.load.tilemapTiledJSON('level_'+ i, 'Level' + i + '.json');
+		}
 
 		this.load.setPath('assets/images/');
 		this.load.image('logo', 'recoil_logo_notext.png');
