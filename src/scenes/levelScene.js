@@ -7,8 +7,18 @@ import {addFullscreenButton} from '../utils.js';
 
 export const LEVELS_AMMOUNT = 7;
 
+/**
+ * Escena de juego, en esencia toda la lógica más global y progresión se gestiona aquí.
+ * LevelScene hace de "GameManager" en fase de gameplay.
+ * 
+ * Las responsabilidades de LevelScene es controlar la progresión e inicializar los niveles
+ * a partir de los tilemaps, que represan dichos niveles
+ */
 export default class LevelScene extends Phaser.Scene {
     
+    /**
+     * Inicializado de la lista de niveles con las claves de los tilemaps cargados
+     */
     constructor() {
         super({ key: 'LevelScene' });
 
@@ -19,6 +29,10 @@ export default class LevelScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * Inicializa el nivel solicitado por MenuScene
+     * @param {} data datos de la escena, contiene el nivel inicial
+     */
     init(data) {
         if (data.levelID > LEVELS_AMMOUNT || data.levelID < 1) {
             this.currentLevelID = 0;
@@ -32,6 +46,22 @@ export default class LevelScene extends Phaser.Scene {
 
     }
 
+    /**
+     * Instancia todos los objetos de juego y estructuras de datos a utilizar:
+     * - Jugador
+     * - Foso de muerte (levelLimit)
+     * - Bandera de fin de nivel
+     * - Grupo de pinchos
+     * - Tween global de munición
+     * - Listas de plataformas y municiones
+     * 
+     * Estas estructuras serán reutilizadas ya que entre escenas la mayoría de objetos del
+     * nivel no se borras si no que se reposicionan. Algunas de estas listas sirven para saber
+     * los objetos que borrar al avanzar de nivel, sin tener que cambiar de escena.
+     * 
+     * También se asignan parámetros de tolerancia en colisiones para evitar el tunneling
+     * y se ajusta la zona muerta de la cámara
+     */
     create() {
 
         addFullscreenButton(this);
@@ -39,8 +69,7 @@ export default class LevelScene extends Phaser.Scene {
         // Cursor por defecto
 		this.input.setDefaultCursor('url(assets/images/recoil_cursor.cur), auto');
 
-        // esto hay que ponerlo en cada escena, no vale con ponerlo en solo la de carga
-		this.physics.world.TILE_BIAS = 50;
+		this.physics.world.TILE_BIAS = 50; // Esto debe estar en cada escena que haya colisiones
         this.cameras.main.setDeadzone(100, 70);
 
         this.player = new Player(this, 0, 0, 0.3, 0.7);
@@ -69,29 +98,26 @@ export default class LevelScene extends Phaser.Scene {
             }
         });
 
-        const height = this.sys.game.config.height;
-
         this.initLevel();
     }
 
     update() {}
 
-    clearCurrentLevel() {
-        this.terrainCollider.destroy();
-        this.levelMap.layers.forEach(l => l.tilemapLayer.destroy());
-        this.levelMap.destroy();
-        this.spikes.clear(true, true);
-
-        this.platforms.forEach(platform => platform.destroy());
-        this.platforms = [];
-
-        this.munitions.forEach(munition => munition.destroy());
-        this.munitions = [];
-    }
-
     /** 
     * Crea el nivel según a lo que apunta currentLevelID,
-    * si el ID no es válido se lanza un error
+    * si el ID no es válido se lanza un error.
+    * 
+    * Se leen de forma obligatoria en el siguiente orden:
+    * - Terreno
+    * - Metadatos (punto de spawn, límite del mapa y bandera del fin del mapa)
+    * 
+    * Los siguientes datos pueden no estar en el tilemap, por lo que son opcionales:
+    * - Cajas de munición
+    * - Pinchos
+    * - Plataformas
+    * 
+    * Las colisiones con el grupo de pinchos se asignan aquí, mientras que las colisiones con la
+    * bandera, las plataformas y munición se asignan dentro de sus objetos
     */
     initLevel() {
 
@@ -101,6 +127,13 @@ export default class LevelScene extends Phaser.Scene {
                 tileWidth: 50, 
                 tileHeight: 50
             });
+
+            // Creación de terreno
+            const tilesetTerrain = this.levelMap.addTilesetImage('terrain_tileset', 'terrain_tileset');
+            const terrainLayer = this.levelMap.createLayer('ground', tilesetTerrain);
+            terrainLayer.setDepth(10);
+            terrainLayer.setCollisionBetween(0, 999);
+            this.terrainCollider = this.physics.add.collider(this.player, terrainLayer);
 
             // Lectura de datos del nivel
             const dataObjects = this.levelMap.getObjectLayer('data').objects;
@@ -124,12 +157,43 @@ export default class LevelScene extends Phaser.Scene {
 
             // Jugador
             this.player.setup(plX, plY);
-            this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50);
+            this.cameras.main.startFollow(this.player, true, 1, 0.5, 0.6, 50); // necesario
 
-            // Limite del mundo
+            // Bandera
+            this.flag.setup(fX, fY);
+
+            // Limites de la cámara y mundo
+            this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
+            this.cameras.main.setBounds(-this.levelMap.tileWidth * 4, -this.levelMap.tileHeight * 2, 
+                this.levelMap.widthInPixels + this.levelMap.tileWidth * 8, 
+                this.levelMap.heightInPixels + this.levelMap.tileHeight * 4);
+
+            // Limite del mundo (foso de muerte)
             this.levelLimit.position.set(0, yLimit);
             this.levelLimit.setSize(this.levelMap.widthInPixels, 50);
             this.levelLimit.updateCenter();
+
+            // Munición, esto podría estar en una pool
+            const ammoObjects = this.levelMap.getObjectLayer('munition').objects;
+            ammoObjects.forEach(obj => {
+                if (obj.properties) {
+                    for (const { name, value } of obj.properties) {
+                        if (name === 'ammo') {
+                            this.munitions.push(new Munition(this, this.player, obj.x + obj.width/2, 
+                                obj.y - obj.height/2, value));
+                        }
+                    }
+                }
+            });
+
+            // Pinchos, esto podría estar en una pool, pero no lo está por falta de tiempo
+            const spikeObjects = this.levelMap.getObjectLayer('spikes').objects;
+            spikeObjects.forEach(obj => {
+                // tambien se puede usar this.spikes.add(objeto) y añade el objeto, o addMultiple
+                this.spikes.create(obj.x + obj.width/2, obj.y - obj.height/2);
+            });
+            this.physics.add.collider(this.player, this.spikes, 
+                () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
 
             // Plataformas
             const platformObjects = this.levelMap.getObjectLayer('platforms').objects;
@@ -149,7 +213,7 @@ export default class LevelScene extends Phaser.Scene {
                     }
                 }
             });
-
+                // Destinos de las plataformas
             platformDestObjects.forEach(obj => {
                 if (obj.properties) {
                     for (const { name, value } of obj.properties) {
@@ -167,56 +231,49 @@ export default class LevelScene extends Phaser.Scene {
                 this.platforms.push(
                     new Platform(this, this.player, val.xStart, val.yStart, val.xEnd, val.yEnd));
             });
-            
-            // Munición
-            const ammoObjects = this.levelMap.getObjectLayer('munition').objects;
-            ammoObjects.forEach(obj => {
-                if (obj.properties) {
-                    for (const { name, value } of obj.properties) {
-                        if (name === 'ammo') {
-                            this.munitions.push(new Munition(this, this.player, obj.x + obj.width/2, 
-                                obj.y - obj.height/2, value));
-                        }
-                    }
-                }
-            });
-
-            // Creación de terreno
-            const tilesetTerrain = this.levelMap.addTilesetImage('terrain_tileset', 'terrain_tileset');
-            const terrainLayer = this.levelMap.createLayer('ground', tilesetTerrain);
-            terrainLayer.setDepth(10);
-            terrainLayer.setCollisionBetween(0, 999);
-            this.terrainCollider = this.physics.add.collider(this.player, terrainLayer);
-
-            // Pinchos, esto podría estar en una pool, pero no lo está
-            const spikeObjects = this.levelMap.getObjectLayer('spikes').objects;
-            spikeObjects.forEach(obj => {
-                // tambien se puede usar this.spikes.add(objeto) y añade el objeto, o addMultiple
-                this.spikes.create(obj.x + obj.width/2, obj.y - obj.height/2);
-            });
-            this.physics.add.collider(this.player, this.spikes, 
-                () => { this.player.changeState(PLAYER_STATES.DEAD); }, null, this);
-
-            // Bandera
-            this.flag.setup(fX, fY);
-
-            // Limites de la cámara y mundo
-            this.physics.world.setBounds(0, 0, this.levelMap.widthInPixels, this.levelMap.heightInPixels);
-            this.cameras.main.setBounds(-this.levelMap.tileWidth * 4, -this.levelMap.tileHeight * 2, 
-                this.levelMap.widthInPixels + this.levelMap.tileWidth * 8, 
-                this.levelMap.heightInPixels + this.levelMap.tileHeight * 4);
         }
         else {
             throw new Error("El ID de nivel actual no es válido");
         }
     }
 
+    /**
+     * Limpia objetos del nivel. Esto solo se hace entre nivel y nivel, por lo tanto
+     * el coste de borrar memoria se amortiza con que sea algo puntual.
+     * 
+     * Todos los objetos únicos del nivel se borran.
+     */
+    clearCurrentLevel() {
+        this.terrainCollider.destroy();
+        this.levelMap.layers.forEach(l => l.tilemapLayer.destroy());
+        this.levelMap.destroy();
+        this.spikes.clear(true, true);
+
+        this.platforms.forEach(platform => platform.destroy());
+        this.platforms = [];
+
+        this.munitions.forEach(munition => munition.destroy());
+        this.munitions = [];
+    }
+
+    /**
+     * Lo llama el jugador desde el final de la animacion de muerte.
+     * 
+     * Reposiciona al jugador a su punto de spawn y reinicia los estados 
+     * de las plataformas y munición
+     */
     resetLevel() {
         this.player.changeState(PLAYER_STATES.SPAWN);
         this.platforms.forEach( platform => platform.reset());
         this.munitions.forEach( munition => munition.reset());
     }
 
+    /**
+     * Si quedan niveles por avanzar limpia el nivel actual y lanza el siguiente. Se guarda en
+     * almacenamiento local el nivel al que se avanza
+     * 
+     * Si no, se ha terminado el juego, se inicia la escena de victoria y se elimina el almacenamiento.
+     */
     advanceLevel() {
         console.log(this.currentLevelID);
         if (this.currentLevelID < this.levelsList.length - 1) {
