@@ -17,10 +17,14 @@ export const PLAYER_STATES = Object.freeze({
         SPAWN: 3
 });
 
+/**
+ * Clase de jugador. Controla todo lo relativo a como interactua con el mundo, como se dispara etc.
+ * También se encarga de llamar al reinicio de escena en respawn.
+ */
 export default class Player extends Phaser.GameObjects.Container  {
 
     /**
-   * Constructor del jugador
+   * Constructor del jugador, ver todos los métodos init
    * @param {Phaser.Scene} scene Escena a la que pertenece el jugador
    * @param {number} x Coordenada x inicial
    * @param {number} y Coordenada y inicial
@@ -36,12 +40,6 @@ export default class Player extends Phaser.GameObjects.Container  {
 
         this.scene.add.existing(this); 
 
-        // PARÁMETROS
-        this.horizontalInput = 0;
-        this.lookingAt = 1;
-        this.jumpExecuted = false;
-        this.canShoot = true;
-
         this.initSprites();
         this.initPhysics(physicsWidthPercent, physicsHeightPercent);
         this.initInput();   
@@ -50,6 +48,11 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.initSoundEffects();
     }
 
+    /**
+     * Al no estár atachado al container del jugador hay que borrarlo explícitamente 
+     * porque el jugador si que es dueño del efecto de disparo
+     * @param {Phaser.Scene} fromScene 
+     */
     destroy(fromScene) {
 
         if (this.shotSprite) {
@@ -78,6 +81,11 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.changeState(PLAYER_STATES.SPAWN);
     }
 
+    /**
+     * Inicializa sprites de cuerpo, arma, fondo del arma y efecto de disparo.
+     * 
+     * Los 3 primeros son parte del container de player. El otro se reposición
+     */
     initSprites() {
         // SPRITE DE FONDO DEL ARMA
         this.setDepth(1);
@@ -109,6 +117,9 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /** 
+     * Ajusta el body al suelo y con offsets para que la caja de colisiones. 
+     * Tambien ajusta las velocidades maximas del cuerpo.
+     * 
    * @param {number} physicsWidthPercent Del 0 al 1, tamaño horizontal de la hitbox relativo al sprite
    * @param {number} physicsHeightPercent Del 0 al 1, tamaño vertical de la hitbox relativo al sprite, 
    *    la cantidad eliminada es quitada de la parte de arriba del sprite
@@ -140,7 +151,17 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.body.setMaxSpeed(GROUND_MAX_SPEED);
     }
 
+    /**
+     * Inicializa todos los parametros de control de input y los callbacks de input.
+     */
     initInput() {
+
+        // PARÁMETROS DE CONTROL
+        this.horizontalInput = 0;
+        this.lookingAt = 1;
+        this.jumpExecuted = false;
+        this.canShoot = true;
+
         this.left = this.scene.input.keyboard.addKey('A');
         this.right = this.scene.input.keyboard.addKey('D');
 
@@ -179,8 +200,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.leftClickPressed = false;
         this.shootFlag = false;
 
-        // esto está con un callback porque el callback me permite registrar el primer down
-        // desde el reposo pero 
+        // Esto y el pointer up vale para registrar solo la primera pulsación
         this.scene.input.on('pointerdown', pointer => {
 
             if (pointer.leftButtonDown() && !this.leftClickPressed) {
@@ -197,6 +217,12 @@ export default class Player extends Phaser.GameObjects.Container  {
         });
     }
 
+    /**
+     * Encadena las animaciones que va a usar el body del player.
+     * Activa y desactiva los brazos (solo se ven en juego, no se ven en spawn o en muerte).
+     * 
+     * Desactiva el efecto de disparo una vez termina la animacion
+     */
     initAnimationsCallbacks() {
 
         // Deshabilitar sprites de brazos en el spawn
@@ -209,7 +235,7 @@ export default class Player extends Phaser.GameObjects.Container  {
         // Habilitar sprites de brazos en el spawn
         this.playerBody.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'spawn',
             () => { 
-                this.changeState(PLAYER_STATES.AIR);
+                this.changeState(PLAYER_STATES.GROUNDED);
                 this.setWeaponEnabled(true);
                 this.body.setAllowGravity(true);
             }
@@ -235,10 +261,13 @@ export default class Player extends Phaser.GameObjects.Container  {
         );
     }
 
-    initMunitionUI() {
 
-        const width = this.scene.sys.game.config.width;
-        const height = this.scene.sys.game.config.height;
+    /**
+     * Inicializa la UI de munición
+     * 
+     * Solo tienes munición si tienes un jugador, la UI de munición pertenece al jugador
+     */
+    initMunitionUI() {
 
         this.UIMunition = [];
 
@@ -257,6 +286,9 @@ export default class Player extends Phaser.GameObjects.Container  {
         }
     }
 
+    /**
+     * Guarda referencias de los efectos de sonido a lanzar durante el gameplay
+     */
     initSoundEffects() {
         this.deathSoundEffect = this.scene.sound.add('death', { loop: false });
 		this.deathSoundEffect.setVolume(0.2);
@@ -265,22 +297,30 @@ export default class Player extends Phaser.GameObjects.Container  {
 		this.shootSoundEffect.setVolume(0.1);
     }
 
+    /**
+     * El update funciona como una máquina de estados
+     * @param {number} t 
+     * @param {number} dt 
+     */
     preUpdate(t,dt) {
         const deltaSeconds = dt / 1000;
 
+        // Solo funciona si no esta muerto o spawneando
         if (this.state !== PLAYER_STATES.DEAD &&
-            this.state !== PLAYER_STATES.SPAWN
-        ) {  
-
+            this.state !== PLAYER_STATES.SPAWN) {
+            
             switch (this.state) {
 
+                // Movimiento en tierra y detección de salto
                 case PLAYER_STATES.GROUNDED:
                     
                     if (!this.body.onFloor()) {
                         this.changeState(PLAYER_STATES.AIR);
                     }
 
+                    // El input solo puede ser 1 y -1 según la inicialziacion de los callbacks de input
                     if (this.horizontalInput != 0) {
+                        // Si cambia de dirección antes reinicia la velocidad horizontal a 0
                         if (Math.sign(this.body.velocity.x) != this.horizontalInput) {
                             this.body.setVelocityX(0);
                         }
@@ -290,6 +330,7 @@ export default class Player extends Phaser.GameObjects.Container  {
                             HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
                         }
                     else {
+                        // Si está parado se decrementa
                         if (this.body.velocity.x != 0) {
                             this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 0, 
                                 HORIZONTAL_GROUND_DECELERATION * deltaSeconds));
@@ -320,27 +361,29 @@ export default class Player extends Phaser.GameObjects.Container  {
                     if (this.horizontalInput != 0) { 
                         if (Math.sign(this.body.velocity.x) === this.horizontalInput &&
                             Math.abs(this.body.velocity.x) < this.horizontalMaxVelocity) {
-
+                            
                             this.body.setVelocityX(this.moveTowards(this.body.velocity.x, 
                             this.horizontalMaxVelocity * this.horizontalInput, 
                             HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
                         }
+                        // En el aire la velocidad no cambia tan rápido al cambiar de dirección, 
+                        // simula perdida de control en el aire
                         else if (Math.sign(this.body.velocity.x) !== this.horizontalInput) {
                             this.body.setVelocityX(this.body.velocity.x + this.moveTowards(0, 
                             this.horizontalMaxVelocity * this.horizontalInput, 
                             HORIZONTAL_GROUND_ACCELERATION * deltaSeconds));
                         }
                     }
-                    else {
-                        this.body.setAcceleration(0);
-                    }
 
+                    // Groundea al jugador
                     if (this.body.onFloor()) {
                         this.changeState(PLAYER_STATES.GROUNDED);
                     }
 
                 break;
             }
+
+            // Se ejecuta siempre que se esté en el aire y en el suelo
 
             // Gestión del arma
             const shootPoint = this.weapon.getWorldTransformMatrix().transformPoint(0., 0.);
@@ -350,14 +393,14 @@ export default class Player extends Phaser.GameObjects.Container  {
                 this.handleShoot(shootPoint);
                 this.shootFlag = false;
             }
-            this.flipAndRotate(shootPoint);
+            this.flipAndRotate(shootPoint); // Apunta el arma a donde apunte el raton desde el jugador
         }
         
     }
 
 
     /**
-     * Cambia al estado pasado
+     * Cambia al estado indicado si es válido
      * @param {number} newState estado al que se cambia
      */
     changeState(newState) {
@@ -365,6 +408,7 @@ export default class Player extends Phaser.GameObjects.Container  {
             this.state = newState;
             
             switch (this.state) {
+                // Reinicia la el modulo de velocidad al modulo de suelo, así como el límite horizontal
                 case PLAYER_STATES.GROUNDED: 
             
                     this.shootFlag = false;
@@ -374,6 +418,7 @@ export default class Player extends Phaser.GameObjects.Container  {
 
                     break;
 
+                // Aumenta la velocidad maxima a la velocidad de aire y anima al jugador en animacion de salto
                 case PLAYER_STATES.AIR: 
 
                     this.shootFlag = false;
@@ -385,6 +430,11 @@ export default class Player extends Phaser.GameObjects.Container  {
 
                     break;
 
+                // Lanza la animación de spawn. La forma de resetear al player sobre el nivel es cambiarlo
+                // a spawn. También se congela el jugador hasta que termine la animación
+                // 
+                // Cuando acabe la animación de spawn automáticamente se pasa a grounded, esto se indica en
+                // los callbacks de animación arriba
                 case PLAYER_STATES.SPAWN:
                     this.playerBody.play('spawn');
                     this.setPosition(this.spawnX, this.spawnY);
@@ -397,6 +447,8 @@ export default class Player extends Phaser.GameObjects.Container  {
                     
                     break;
 
+                // Se congela al jugador en el sitio, se reproduce el sonido de muerte y se reproduce
+                // la animación de muerte. Cuando termine la animación se pasa automáticamente a spawn
                 case PLAYER_STATES.DEAD:
                     
                     this.deathSoundEffect.play();
@@ -411,6 +463,7 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
+     * Habilita los sprites del arma
      * @param {boolean} enable activar o desactivar el arma
      */
     setWeaponEnabled(enable) {
@@ -426,7 +479,11 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
-     * Manejado del disparo
+     * Gestión del disparo, se llama en preUpdate. Reproduce el sonido de disparo, coloca y 
+     * reproduce el efecto de disparo y reduce en uno el númer de tiros disponibles.
+     * 
+     * Una vez aplicado el impulso se rehabilita el poder disparar tras un delay
+     *  
      * @param {Phaser.Types.Math.Vector2Like} shootPoint el punto desde donde se dispara
      */
     handleShoot(shootPoint) {
@@ -468,6 +525,10 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.setShootEffect(angle);
     }
 
+    /**
+     * Según la cantidad de disparos disponibles habilita tantos iconos de munición. 
+     * Deshabilita el resto
+     */
     setCurrentMunitionVisible() {
 
         let i;
@@ -482,7 +543,9 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
-     * Flipea arma y cuerpo y rota el arma según donde apunta el ratón
+     * Flipea el cuerpo según donde esté el ratón en X respecto al cuerpo.
+     * Rota el arma según donde apunta el ratón de la misma forma. Si el arma apunta hacia el lado izquierdo
+     * del cuerpo flippea en Y para que acompañe al flip en X del jugador.
      * @param {Phaser.Types.Math.Vector2Like} shootPoint el punto desde donde se dispara
      */
     flipAndRotate(shootPoint) {
@@ -510,6 +573,10 @@ export default class Player extends Phaser.GameObjects.Container  {
         this.weaponBg.setRotation(angle);
     }
 
+    /**
+     * Se llama en los callbacks de input de izquierda/derecha. 
+     * Si ambos botones están siendo presionados las direcciones se cancelan y el input es 0.
+     */
     reloadHorizontalDirection() {
         if (this.rightPress && !this.leftPress) {
             this.horizontalInput = 1;
@@ -522,6 +589,11 @@ export default class Player extends Phaser.GameObjects.Container  {
         }
     }
 
+    /**
+     * Se llama en los callbacks de input de izquierda/derecha. 
+     * Comprueba si hace falta cambiar la animación según a donde se mueve el jugador.
+     * Esto se hace solo en el suelo ya que en spawn, muerte y air tiene animaciones fijas.
+     */
     reloadAnimation() {
         if (this.state == PLAYER_STATES.GROUNDED) {
             let anim;
@@ -537,6 +609,10 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
+     * Se llama en handleshoot.
+     * 
+     * Coloca y hace visible el efecto de disparo con angule en base al ángulo de disparo y posición
+     * en base al punto de disparo + vector de tiro.
      * 
      * @param {number} rot rotacion del arma
      */
@@ -559,8 +635,11 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
+     * Se llama en los callbacks de collision de Munition.
      * 
-     * @param {number} munition
+     * Añade munición al jugador y refresca la UI
+     * 
+     * @param {number} munition Munición a añadir
      */
     setMunition(munition) {
         this.shootFlag = false;
@@ -569,6 +648,8 @@ export default class Player extends Phaser.GameObjects.Container  {
     }
 
     /**
+     * Función helper. Utilizada en el movimiento horizontal.
+     * 
      * Mueve current hacia target a una velocidad máxima delta
      * @param {number} current - valor actual
      * @param {number} target - valor objetivo
