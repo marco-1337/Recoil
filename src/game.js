@@ -8,12 +8,11 @@ let config = {
 	width: 1600,
 	height: 900,
 	parent: "game-display-section",
-	//backgroundColor: 0x3498db,
 	scale: {
 		mode: Phaser.Scale.FIT,
 		autoCenter: Phaser.Scale.CENTER_BOTH,
 		expandParent: true,
-		fullscreenTarget: 'game-display-section'
+		fullscreenTarget: 'game-display-section' // Habilita el modo fullscreen correctamente
 	},
 	//pixelArt: true,
 	antialias: true,
@@ -27,11 +26,11 @@ let config = {
 		arcade: {
 			gravity: { y: 4000 },
 			fixedStep: true,
-      		fps: 120, // para no atravesar cosas, por al parecer arcade no es continuo
+      		fps: 120, // para no atravesar cosas, porque al parecer arcade no es continuo
 			debug: false // permite ver las cajas de colisión
 		}
 	}
 };
 
 const game = new Phaser.Game(config);
-game.sound.pauseOnBlur = false;
+game.sound.pauseOnBlur = false; // Hace que la música siga sonando cuando se ha perdido el foco
