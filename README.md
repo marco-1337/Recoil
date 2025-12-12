@@ -7,14 +7,16 @@ Juego 2D de plataformas basado en físicas, hecho en Phaser
 Click **[aquí](https://marco-1337.github.io/Recoil/)** para jugar
 
 - [GDD](./GDD.md)
-- [Información de los asstes](./assets/assets.md)
+- [Autoría e información de los asstes](./assets/assets.md)
 
 ---
 
 ## Capturas
 
-![Game screenshot](./GameScreenshots/screenshot1.png)
-
+![Game screenshot](./GameScreenshots/captura1.png)
+![Game screenshot](./GameScreenshots/captura2.png)
+![Game screenshot](./GameScreenshots/captura3.png)
+![Game screenshot](./GameScreenshots/captura4.png)
 ---
 
 ### Licencia del código
