@@ -8,6 +8,7 @@ Click **[aquí](https://marco-1337.github.io/Recoil/)** para jugar
 
 - [GDD](./GDD.md)
 - [Autoría e información de los asstes](./assets/assets.md)
+- [Arquitectura](./RecoilUML.png)
 
 ---
 
